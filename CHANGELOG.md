@@ -12,6 +12,13 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+### Changed
+
+- Releases are built by GitHub Actions from the version tag, and every file carries a build
+  provenance attestation.
+- One checksum file, `SHA256SUMS`, covers every file of a release; the PC tool no longer has
+  a checksum file of its own.
+
 ### Fixed
 
 - `sshrunner backups import` refuses archive entries that name a Windows device (`NUL`,

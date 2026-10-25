@@ -194,7 +194,7 @@ written.
 ```sh
 go vet ./... && go test ./...     # also step "cli" of tools/check.sh
 go test ./internal/tui -run Frames -update   # rewrite the editor's golden screens (internal/tui/testdata/frames)
-scripts/package.sh                # archives, .deb/.rpm and checksums in ../.cache/cli-dist
+scripts/package.sh                # archives and .deb/.rpm in ../.cache/cli-dist
 ```
 
 The file formats are SSH Runner's (`flipper-app/core/profile.c`); `flipper-app/tests/golden/`

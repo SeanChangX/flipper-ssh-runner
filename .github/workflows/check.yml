@@ -19,8 +19,8 @@ jobs:
   proto-mirror:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with: { python-version: "3.12" }
       - run: python tools/sync_proto.py --check
 
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # a container job skips the image's entrypoint, so load the IDF environment (pip, cmake)
       - shell: bash
         run: |
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - shell: bash
         run: |
           . $IDF_PATH/export.sh
@@ -48,8 +48,8 @@ jobs:
   tools-tests:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
@@ -57,8 +57,8 @@ jobs:
   cli:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with: { go-version-file: cli/go.mod, cache-dependency-path: cli/go.sum }
       - run: go mod tidy -diff && go vet ./... && go test ./... && go build ./cmd/sshrunner
         working-directory: cli
@@ -70,8 +70,8 @@ jobs:
       matrix:
         sdk: [UNLEASHED, OFFICIAL]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
       - name: Fetch pinned SDK
@@ -81,7 +81,7 @@ jobs:
       - name: Build
         working-directory: flipper-app
         run: ufbt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ssh_runner-${{ matrix.sdk }}
           path: flipper-app/dist/ssh_runner.fap
@@ -90,14 +90,14 @@ jobs:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build
         shell: bash
         working-directory: firmware-esp32
         run: |
           . $IDF_PATH/export.sh
           idf.py -B ../.cache/build/esp32 -D SDKCONFIG=../.cache/build/esp32/sdkconfig build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: firmware
           path: |
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build the virtual-eFuse test overlay
         shell: bash
         working-directory: firmware-esp32

@@ -1,0 +1,181 @@
+# Builds a release's files and publishes the release when a version tag (vX.Y.Z) is pushed.
+# Run by hand (workflow_dispatch), or on a pull request that changes how releases are built,
+# it is a dry run: the same files as an artifact, no release. The files are collected by
+# tools/release_assets.py, which tools/release.sh also uses for a local dry run.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - tools/release_assets.py
+      - cli/.goreleaser.yaml
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to build as a dry run (X.Y.Z); empty takes the firmware's
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: v
+        env:
+          INPUT: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then ver=${GITHUB_REF_NAME#v}
+          elif [ -n "$INPUT" ]; then ver=$INPUT
+          else ver=$(sed -nE 's/^set\(PROJECT_VER "([0-9.]+)"\)/\1/p' firmware-esp32/CMakeLists.txt)
+          fi
+          python3 tools/release_assets.py check "$ver"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+  fap:
+    needs: version
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        sdk: [OFFICIAL, UNLEASHED]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      # as check.yml: ufbt from requirements.txt, not the ufbt action (its own steps use
+      # actions by tag, which a SHA-pinning policy refuses)
+      - run: pip install -r requirements.txt
+      - name: Fetch pinned SDK
+        run: |
+          url=$(grep -E "^${{ matrix.sdk }}_SDK_URL=" flipper-app/SDK_VERSION | cut -d= -f2-)
+          ufbt update --hw-target=f7 --url="$url"
+      - name: Build
+        working-directory: flipper-app
+        run: ufbt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fap-${{ matrix.sdk }}
+          path: flipper-app/dist/ssh_runner.fap
+          if-no-files-found: error
+
+  firmware:
+    needs: version
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # built from scratch, like tools/release.sh: the dev firmware, no eFuse-burning option
+      - name: Build
+        shell: bash
+        env:
+          IDF_COMPONENT_MANAGER: "0"
+        run: |
+          . $IDF_PATH/export.sh
+          cd firmware-esp32
+          idf.py -B ../build -D SDKCONFIG=../build/sdkconfig build
+      - name: Collect the parts and the ESP-IDF licences
+        shell: bash
+        run: |
+          mkdir -p esp32/bootloader esp32/partition_table
+          cp build/bootloader/bootloader.bin esp32/bootloader/
+          cp build/partition_table/partition-table.bin esp32/partition_table/
+          cp build/flipper_eth_ssh.bin build/flash_args build/sdkconfig esp32/
+          cp $IDF_PATH/LICENSE esp32/LICENSE.esp-idf
+          cp $IDF_PATH/components/lwip/lwip/COPYING esp32/LICENSE.lwip
+          cp $IDF_PATH/components/freertos/FreeRTOS-Kernel/LICENSE.md esp32/LICENSE.freertos
+          cp $IDF_PATH/components/mbedtls/mbedtls/LICENSE esp32/LICENSE.mbedtls
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: esp32
+          path: esp32
+          if-no-files-found: error
+
+  cli:
+    needs: version
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with: { go-version-file: cli/go.mod, cache-dependency-path: cli/go.sum }
+      - name: Version
+        run: |
+          echo "SSHRUNNER_VERSION=${{ needs.version.outputs.version }}" >> "$GITHUB_ENV"
+          echo "SSHRUNNER_COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "SSHRUNNER_DATE=$(git log -1 --format=%cs)" >> "$GITHUB_ENV"
+      - uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: v2.18.3 # as cli/scripts/package.sh
+          workdir: cli
+          args: release --snapshot --clean
+        env:
+          CGO_ENABLED: "0"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cli
+          path: |
+            .cache/cli-dist/*.tar.gz
+            .cache/cli-dist/*.zip
+            .cache/cli-dist/*.deb
+            .cache/cli-dist/*.rpm
+          if-no-files-found: error
+
+  assemble:
+    needs: [version, fap, firmware, cli]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with: { path: build }
+      - name: Release files and notes
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          python tools/release_assets.py assets "$VERSION" release \
+            --fap-official build/fap-OFFICIAL/ssh_runner.fap \
+            --fap-unleashed build/fap-UNLEASHED/ssh_runner.fap \
+            --esp32 build/esp32 --cli-dist build/cli
+          python tools/release_assets.py notes "$VERSION" > notes.md
+          cat release/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-${{ needs.version.outputs.version }}
+          path: |
+            release
+            notes.md
+          if-no-files-found: error
+
+  publish:
+    if: github.ref_type == 'tag'
+    needs: [version, assemble]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # the release
+      id-token: write # the attestation's signing certificate
+      attestations: write # storing the attestation
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-${{ needs.version.outputs.version }}
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: release/SHA256SUMS
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" release/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "SSH Runner v$VERSION" --notes-file notes.md
