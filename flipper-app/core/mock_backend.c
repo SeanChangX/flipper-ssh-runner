@@ -689,9 +689,12 @@ static void key_out(MockBackend* m, int32_t kind) {
     for(size_t i = 0; i < n; i += 48) { /* 64 characters a line, no padding inside */
         size_t k = n - i > 48 ? 48 : n - i;
         keyfmt_b64_encode(bin + i, k, true, b64, 200);
-        o += (size_t)snprintf(pem + o, 1024 - o, "%s\n", b64);
+        int r = snprintf(pem + o, 1024 - o, "%s\n", b64);
+        if(r < 0 || (size_t)r >= 1024 - o) break; /* never: the file is about 400 bytes */
+        o += (size_t)r;
     }
-    o += (size_t)snprintf(pem + o, 1024 - o, "-----END OPENSSH PRIVATE KEY-----\n");
+    int r = snprintf(pem + o, 1024 - o, "-----END OPENSSH PRIVATE KEY-----\n");
+    if(r > 0 && (size_t)r < 1024 - o) o += (size_t)r;
     BackendEvent e = {.type = BackendEvtKeyBlob};
     e.blob.data = (const uint8_t*)pem;
     e.blob.len = (uint32_t)o;

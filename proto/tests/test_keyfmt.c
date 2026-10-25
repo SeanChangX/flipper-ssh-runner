@@ -113,10 +113,14 @@ static size_t put_str(uint8_t* p, const void* s, size_t n) {
 static void pem(const char* label, const char* headers, const uint8_t* der, size_t n) {
     static char b64[6000];
     keyfmt_b64_encode(der, n, true, b64, sizeof(b64));
-    size_t o = (size_t)snprintf(text, sizeof(text), "-----BEGIN %s-----\n%s", label, headers);
-    for(size_t i = 0; b64[i]; i += 70)
-        o += (size_t)snprintf(text + o, sizeof(text) - o, "%.70s\n", b64 + i);
-    snprintf(text + o, sizeof(text) - o, "-----END %s-----\n", label);
+    snprintf(text, sizeof(text), "-----BEGIN %s-----\n%s", label, headers);
+    for(size_t i = 0; b64[i]; i += 70) {
+        size_t o = strlen(text);
+        snprintf(text + o, sizeof(text) - o, "%.70s\n", b64 + i);
+    }
+    size_t o = strlen(text);
+    int r = snprintf(text + o, sizeof(text) - o, "-----END %s-----\n", label);
+    TT_CHECK(r > 0 && (size_t)r < sizeof(text) - o); /* the whole PEM fits */
 }
 
 /* openssh-key-v1 container around a real public key, private part random. */
