@@ -86,11 +86,11 @@ INSTALL = """## Install
 
 **Flipper app.** Download `ssh_runner-official.fap`: it runs on the official firmware and on Unleashed. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader and open it from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only. If the Flipper reports an API mismatch or an outdated app after a firmware update, download the latest release.
 
-**ESP32-S3 board** (Waveshare ESP32-S3-ETH, wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)): unzip `flipper-ssh-runner-esp32-v{ver}.zip` and flash its three parts at their offsets, in the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)) or with `esptool.py --chip esp32s3 -p <port> write_flash @flash_args`. Erase the flash first on a first install only; on an update, no Erase and never one merged image at offset 0. Remove the 3V3 wire before connecting the board's USB-C.
+**ESP32-S3 board** (Waveshare ESP32-S3-ETH, wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)): unzip `flipper-ssh-runner-esp32-v{ver}.zip` and flash its three parts at their offsets: in the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with `esptool.py --chip esp32s3 -p <port> write_flash @flash_args`. On a first install, erase the flash first; on an update, don't erase, and don't merge the parts into one image at offset 0. Remove the 3V3 wire before connecting the board's USB-C.
 
 **sshrunner, the PC tool** (optional): the archive for your system (`sshrunner_{ver}_<os>_<arch>`), or the `.deb` / `.rpm` on Linux. It edits the hosts, commands, keys and scripts on the Flipper over USB, with a backup first: [PC Tool]({doc}cli/README.md).
 
-Checksums of every file: `SHA256SUMS` (`sha256sum -c SHA256SUMS`). Each file also carries a build provenance attestation (`gh attestation verify <file> --repo SeanChangX/flipper-ssh-runner`).
+Setup from scratch: [Quick Start]({doc}docs/QUICKSTART.md). Checksums of every file: `SHA256SUMS` (`sha256sum -c SHA256SUMS`). Each file also carries a build provenance attestation (`gh attestation verify <file> --repo SeanChangX/flipper-ssh-runner`).
 """
 
 
@@ -138,7 +138,9 @@ def unwrap(md: str) -> str:
 def notes(ver: str) -> str:
     doc = f"{REPO}/blob/v{ver}/"
     sec = section(ver)
-    sec = re.sub(r"^## \[[0-9.]+\](?: - (\S+))?", lambda m: f"Released {m.group(1)}." if m.group(1) else "", sec)
+    # no heading or date (the release shows its own); the change kinds at the level of "## Install"
+    sec = re.sub(r"^## \[[0-9.]+\].*", "", sec)
+    sec = re.sub(r"^### ", "## ", sec, flags=re.M)
     sec = re.sub(r"\]\(((?:docs|cli|flipper-app|firmware-esp32)/[^)]+)\)", lambda m: f"]({doc}{m.group(1)})", sec)
     return unwrap(sec).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
 
