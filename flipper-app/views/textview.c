@@ -178,7 +178,7 @@ static void tv_scrollbar(
     canvas_set_color(canvas, ColorWhite);
     canvas_draw_box(canvas, TV_W - 3, y, 3, h);
     canvas_set_color(canvas, ColorBlack);
-    for(uint8_t i = y; i < y + h; i++)
+    for(int i = y; i < y + h; i++)
         if(i % 2 == 0) canvas_draw_dot(canvas, TV_W - 2, i);
     uint16_t th = (uint16_t)((uint32_t)h * visible / nlines);
     if(th < 3) th = 3;

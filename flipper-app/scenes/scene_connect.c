@@ -308,8 +308,14 @@ void ssh_runner_scene_hostkey_on_enter(void* context) {
         size_t m = snprintf(hk_fp, sizeof(hk_fp), "New:\n%s", pr->fp);
         if(pr->count) {
             m += snprintf(hk_fp + m, sizeof(hk_fp) - m, "\nTrusted (%u):", pr->trusted_total);
-            for(uint8_t i = 0; i < pr->count && m < sizeof(hk_fp) - 70; i++)
-                m += snprintf(hk_fp + m, sizeof(hk_fp) - m, "\n%s", pr->trusted[i].fp);
+            for(uint8_t i = 0; i < pr->count; i++) {
+                int r = snprintf(hk_fp + m, sizeof(hk_fp) - m, "\n%s", pr->trusted[i].fp);
+                if(r < 0 || (size_t)r >= sizeof(hk_fp) - m) { /* full: keep the whole lines */
+                    hk_fp[m] = 0;
+                    break;
+                }
+                m += (size_t)r;
+            }
         }
         text_view_set_text(tv, 2, hk_fp, TextViewFontMono);
         text_view_set_buttons(tv, "Cancel", NULL, "Options");

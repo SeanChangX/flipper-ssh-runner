@@ -276,6 +276,13 @@ static void test_commands(void) {
     TT_EQ_INT(d.count, GLOBAL_MAX_CMDS);
 }
 
+/* Appends "Cmd: c<i>" to the text in buf; the test fails rather than cut it short. */
+static void add_cmd(char* buf, size_t size, int i) {
+    size_t used = strlen(buf);
+    int r = snprintf(buf + used, size - used, "Cmd: c%d\n", i);
+    TT_CHECK(r > 0 && (size_t)r < size - used);
+}
+
 /* never cut or dropped: a host file with a command the app cannot run is refused (the list
  * shows it as unreadable, and a save cannot lose it); commands.conf counts what cannot run */
 static void test_command_limits(void) {
@@ -292,16 +299,15 @@ static void test_command_limits(void) {
     snprintf(text, sizeof(text), "%sCmd: ok\nCmd: %s\n", head, long_cmd);
     TT_CHECK(!profile_from_text(text, &p));
     TT_EQ_STR(profile_error(), "A command over 127 chars");
-    int n = snprintf(text, sizeof(text), "%s", head);
+    snprintf(text, sizeof(text), "%s", head);
     for(int i = 0; i < PROFILE_MAX_CMDS + 1; i++)
-        n += snprintf(text + n, sizeof(text) - n, "Cmd: c%d\n", i);
+        add_cmd(text, sizeof(text), i);
     TT_CHECK(!profile_from_text(text, &p));
     TT_EQ_STR(profile_error(), "More than 8 commands");
 
-    n = snprintf(
-        text, sizeof(text), "Filetype: SSH Runner Commands\nVersion: 1\nCmd: %s\n", long_cmd);
+    snprintf(text, sizeof(text), "Filetype: SSH Runner Commands\nVersion: 1\nCmd: %s\n", long_cmd);
     for(int i = 0; i < GLOBAL_MAX_CMDS + 1; i++)
-        n += snprintf(text + n, sizeof(text) - n, "Cmd: c%d\n", i);
+        add_cmd(text, sizeof(text), i);
     CommandList c;
     TT_CHECK(commands_from_text(text, &c));
     TT_EQ_INT(c.count, GLOBAL_MAX_CMDS);
@@ -330,9 +336,9 @@ static void test_commands_missing(void) {
     TT_EQ_INT(commands_text_count(cur), 3);
     /* 15 there: one more fits, the other is reported */
     static char full[2048];
-    int n = snprintf(full, sizeof(full), "Filetype: SSH Runner Commands\nVersion: 1\n");
+    snprintf(full, sizeof(full), "Filetype: SSH Runner Commands\nVersion: 1\n");
     for(int i = 0; i < GLOBAL_MAX_CMDS - 1; i++)
-        n += snprintf(full + n, sizeof(full) - n, "Cmd: c%d\n", i);
+        add_cmd(full, sizeof(full), i);
     snprintf(ex, sizeof(ex), "%s", ex_text);
     commands_missing(full, ex, out, sizeof(out), &added, &no_room);
     TT_EQ_INT(added, 1);
