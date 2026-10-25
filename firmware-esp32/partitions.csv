@@ -1,0 +1,12 @@
+# Name,    Type, SubType,  Offset,   Size,     Flags
+nvs,       data, nvs,      0x9000,   0x10000,
+phy_init,  data, phy,      0x19000,  0x1000,
+# Unused (was: NVS keys for the deprecated flash-encryption release build).
+nvs_keys,  data, nvs_keys, 0x1a000,  0x1000,   encrypted
+factory,   app,  factory,  0x20000,  0x300000,
+# "Protect secrets": the keystore, encrypted with keys derived from an HMAC eFuse key.
+fes_sec,   data, nvs,      0x320000, 0x10000,
+# Virtual-eFuse test builds only: their own plaintext keystore and the emulated eFuses
+# (CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH). Unused by the normal image.
+nvs_test,  data, nvs,      0x330000, 0x10000,
+efuse_em,  data, efuse,    0x340000, 0x2000,

@@ -1,0 +1,7 @@
+# Pinned Flipper SDKs for uFBT. tools/check.ps1 builds the FAP against both.
+# Primary target: the latest Unleashed release; the official firmware is the second build.
+UNLEASHED_TAG=unlshd-094
+UNLEASHED_SDK_URL=https://github.com/DarkFlippers/unleashed-firmware/releases/download/unlshd-094/flipper-z-f7-sdk-unlshd-094.zip
+# Secondary target: latest official release.
+OFFICIAL_TAG=1.5.1
+OFFICIAL_SDK_URL=https://update.flipperzero.one/builds/firmware/1.5.1/flipper-z-f7-sdk-1.5.1.zip

@@ -1,0 +1,41 @@
+# SSH Runner - Flipper UI for the SSH Runner ESP32-S3 + W5500 add-on board.
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Two builds from this tree (a FAP's code is loaded into RAM, so each costs what it carries):
+#   release (default): talks to the board; no mock backend.
+#   demo (SSH_RUNNER_FLAVOUR=demo): mock backend, and a "no board" stub instead of the
+#     UART code - for the screenshot walks and demos.
+import os
+
+_demo = os.environ.get("SSH_RUNNER_FLAVOUR", "release") == "demo"
+
+App(
+    appid="ssh_runner",
+    name="SSH Runner",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="ssh_runner_app",
+    requires=["gui", "storage", "notification", "dialogs"],
+    # measured on the device (heap report "stack"): at most 3.2 KB used over the mock walks
+    # and the hardware walks (hwkeys, m4, m5); 4.5 KB leaves ~30 % headroom
+    stack_size=4 * 1024 + 512,
+    fap_category="GPIO",
+    fap_version="0.2",
+    fap_icon="icons/ssh_runner_10px.png",
+    fap_icon_assets="images",
+    # the built-in examples (files/examples/), copied to the data folder once, on first run
+    fap_file_assets="files",
+    fap_author="SeanChangX",
+    fap_weburl="https://scx.tw/links",
+    fap_description="Run SSH commands and SD-card scripts through an ESP32-S3 + W5500 (LAN/WiFi) add-on board.",
+    # Host unit tests live in tests/ and must not be linked into the FAP.
+    sources=["*.c", "!tests", "!lib"] + (["!backend_uart.c"] if _demo else ["!mock_backend.c", "!backend_none.c"]),
+    cdefines=["SSH_RUNNER_DEMO_BUILD"] if _demo else ["SSH_RUNNER_NO_MOCK"],
+    fap_private_libs=[
+        Lib(
+            name="proto",
+            fap_include_paths=["include"],
+            sources=["*.c"],
+            cdefines=["KEYFMT_NO_DER"],
+        ),
+    ],
+)

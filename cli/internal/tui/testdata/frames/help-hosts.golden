@@ -1,0 +1,31 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 1     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+                       ╭─────────────────────────────────────────────────────────────╮
+                       │                                                             │
+                       │   Keys: Hosts                                               │
+                       │                                                             │
+                       │   a       add a host    tab 1-5 next tab / jump             │
+                       │   e enter edit          ↑ ↓ k j select                      │
+                       │   d       delete        g G     first / last                │
+                       │                         p       push to the Flipper         │
+                       │                         r       reload                      │
+                       │                         q       quit                        │
+                       │                         ?       this help                   │
+                       │                                                             │
+                       │   tab     complete a path        click tab, row, key hint   │
+                       │   tab tab list the matches       wheel scroll               │
+                       │   ctrl+o  browse files                                      │
+                       │   ctrl+s  save a form                                       │
+                       │   esc     cancel                                            │
+                       │   y n     answer (enter = no)                               │
+                       │                                                             │
+                       │   ? close  ·  esc close                                     │
+                       │                                                             │
+                       ╰─────────────────────────────────────────────────────────────╯
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  a add  ·  e edit  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

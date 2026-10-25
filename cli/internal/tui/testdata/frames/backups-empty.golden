@@ -1,0 +1,30 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 1     Commands 0     Keys 0     Scripts 0     Backups 0
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+   CREATED   SOURCE   HOSTS   KEYS   SIZE
+
+   No backups yet. Press b to back up now, or i to import one.
+
+   In ~/.local/share/sshrunner/backups (keeps the newest 10). Every push and restore backs up first.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  enter restore  ·  b back up now  ·  x export  ·  i import  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

@@ -1,0 +1,112 @@
+# Mirrors tools/check.ps1 and tools/check.sh (the local gate). Keep all three in sync when
+# adding a step.
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proto-mirror:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/sync_proto.py --check
+
+  c-format:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/format_c.sh --check
+
+  host-tests:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/host_tests.sh
+
+  tools-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+
+  cli:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version-file: cli/go.mod, cache-dependency-path: cli/go.sum }
+      - run: go mod tidy -diff && go vet ./... && go test ./... && go build ./cmd/sshrunner
+        working-directory: cli
+        env: { CGO_ENABLED: "0" }
+
+  fap:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        sdk: [UNLEASHED, OFFICIAL]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - name: Fetch pinned SDK
+        run: |
+          url=$(grep -E "^${{ matrix.sdk }}_SDK_URL=" flipper-app/SDK_VERSION | cut -d= -f2-)
+          ufbt update --hw-target=f7 --url="$url"
+      - name: Build
+        working-directory: flipper-app
+        run: ufbt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ssh_runner-${{ matrix.sdk }}
+          path: flipper-app/dist/ssh_runner.fap
+
+  firmware:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: bash
+        working-directory: firmware-esp32
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -B ../.cache/build/esp32 -D SDKCONFIG=../.cache/build/esp32/sdkconfig build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            .cache/build/esp32/*.bin
+            .cache/build/esp32/bootloader/bootloader.bin
+            .cache/build/esp32/partition_table/partition-table.bin
+            .cache/build/esp32/flash_args
+
+  firmware-efusetest:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the virtual-eFuse test overlay
+        shell: bash
+        working-directory: firmware-esp32
+        run: |
+          . $IDF_PATH/export.sh
+          idf.py -B ../.cache/build/esp32-efusetest -D SDKCONFIG=../.cache/build/esp32-efusetest/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.efusetest" build

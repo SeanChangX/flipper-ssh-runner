@@ -1,0 +1,58 @@
+# Local packaging: scripts/package.sh (it sets the version and runs goreleaser release
+# --snapshot --clean). Builds, archives and checksums into ../.cache/cli-dist; publishes
+# nothing.
+version: 2
+project_name: sshrunner
+dist: ../.cache/cli-dist
+
+# --snapshot ignores GORELEASER_CURRENT_TAG: the release's version, set by package.sh
+snapshot:
+  version_template: "{{ .Env.SSHRUNNER_VERSION }}"
+
+before:
+  hooks:
+    # archives take files from this folder only: the repository's license, copied (git-ignored)
+    - cp ../LICENSE LICENSE
+    # every linked module's license (MIT / BSD notices travel with the binary)
+    - bash scripts/licenses.sh
+
+builds:
+  - id: sshrunner
+    main: ./cmd/sshrunner
+    binary: sshrunner
+    env: [CGO_ENABLED=0] # static: nothing to install on the target machine
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+        -X github.com/SeanChangX/flipper-ssh-runner/cli/internal/version.Version={{ .Env.SSHRUNNER_VERSION }}
+        -X github.com/SeanChangX/flipper-ssh-runner/cli/internal/version.Commit={{ .Env.SSHRUNNER_COMMIT }}
+        -X github.com/SeanChangX/flipper-ssh-runner/cli/internal/version.Date={{ .Env.SSHRUNNER_DATE }}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - third_party/*
+
+checksum:
+  name_template: checksums.txt
+
+nfpms:
+  - package_name: sshrunner
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Arch }}"
+    maintainer: SeanChangX <65809302+SeanChangX@users.noreply.github.com>
+    homepage: https://scx.tw/links
+    description: Manage SSH Runner's hosts, keys and scripts on a Flipper Zero
+    license: GPL-3.0-only
+    formats: [deb, rpm]
+    bindir: /usr/bin
+
+changelog:
+  disable: true

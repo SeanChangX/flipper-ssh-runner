@@ -1,0 +1,85 @@
+menu "SSH Runner"
+
+    menu "LAN (W5500)"
+        config FES_LAN_ENABLE
+            bool "Enable W5500 Ethernet"
+            default y
+
+        # Defaults = Waveshare ESP32-S3-ETH, confirmed against the wiki's
+        # ETH_DHCP pin table and the schematic (docs/HARDWARE.md).
+        config FES_W5500_SPI_HOST
+            int "SPI host (2 = SPI2)"
+            default 2
+        config FES_W5500_SCLK_GPIO
+            int "SCLK GPIO"
+            default 13
+        config FES_W5500_MOSI_GPIO
+            int "MOSI GPIO"
+            default 11
+        config FES_W5500_MISO_GPIO
+            int "MISO GPIO"
+            default 12
+        config FES_W5500_CS_GPIO
+            int "CS GPIO"
+            default 14
+        config FES_W5500_INT_GPIO
+            int "INT GPIO, -1 to poll"
+            default 10
+        config FES_W5500_RST_GPIO
+            int "RST GPIO, -1 if not wired"
+            default 9
+        config FES_W5500_SPI_MHZ
+            int "SPI clock (MHz)"
+            range 1 40
+            default 20
+        config FES_W5500_SPI_SOFT_EDGES
+            bool "Weaker SCLK and MOSI drivers (softer edges)"
+            default y
+            help
+                Sets the SPI clock and MOSI pins to drive strength 1 (about 10 mA) instead
+                of the default 2 (about 20 mA). Slower edges ring less on a board without a
+                series resistor on SCLK, and 20 MHz into the W5500's inputs needs nowhere
+                near the default strength. Turn it off if the LAN link fails at bring-up.
+    endmenu
+
+    menu "Flipper link"
+        choice FES_LINK
+            prompt "Link transport"
+            default FES_LINK_UART
+            config FES_LINK_UART
+                bool "UART1 to the Flipper (pins 13/14)"
+            config FES_LINK_USB_JTAG
+                bool "USB-Serial-JTAG (HIL harness; console moves off USB)"
+        endchoice
+
+        config FES_UART_TX_GPIO
+            int "UART1 TX GPIO -> Flipper RX (pin 14)"
+            default 17
+            depends on FES_LINK_UART
+        config FES_UART_RX_GPIO
+            int "UART1 RX GPIO <- Flipper TX (pin 13)"
+            default 18
+            depends on FES_LINK_UART
+        config FES_LINK_MAX_BAUD
+            int "Maximum negotiated baud"
+            default 921600
+        config FES_DEBUG_LOG_EVT
+            bool "Forward warnings to the Flipper as LOG_EVT (debug builds only)"
+            default n
+    endmenu
+
+    menu "SSH"
+        config FES_SSH_STACK_SIZE
+            int "SSH task stack (internal RAM)"
+            default 49152
+        config FES_SSH_LOG_VERBOSITY
+            int "libssh log verbosity (0 = none, release builds must keep 0)"
+            range 0 4
+            default 0
+    endmenu
+
+    config FES_CONSOLE
+        bool "USB console for testing (net, wifi, ping, ssh, exec ...)"
+        default y
+
+endmenu

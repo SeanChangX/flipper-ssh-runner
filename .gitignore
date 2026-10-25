@@ -1,0 +1,35 @@
+# Footprint rule: every generated or regenerable artifact lives in
+# one of two top-level folders, which are also excluded from backups:
+venv/
+.cache/
+# (.cache/ holds uFBT SDKs + toolchains, all build trees, ccache, pip, pytest, pycache,
+#  and the Linux venv on WSL.)
+
+# uFBT app output: small, kept in the folder and backed up, not committed
+flipper-app/dist/
+
+# Safety nets in case a tool ignores the rule; none of these should ever appear
+__pycache__/
+*.pyc
+.pytest_cache/
+.ufbt/
+build/
+.vscode/
+firmware-esp32/sdkconfig
+firmware-esp32/sdkconfig.old
+firmware-esp32/managed_components/
+firmware-esp32/dependencies.lock
+
+# Local secrets and device state (never commit). Snapshots are backed up, not committed.
+tools/hil/target/local.env
+tools/flipper/snapshots/
+tools/flipper/local/
+
+# Editors / OS
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+# copied by cli/.goreleaser.yaml for the archives
+/cli/LICENSE
+/cli/third_party/

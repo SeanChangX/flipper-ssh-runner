@@ -1,0 +1,15 @@
+# ===========================================================================================
+# TEST OVERLAY - VIRTUAL eFUSES ONLY. Nothing on the chip is burnt: every eFuse write goes
+# to a RAM copy that is kept in the efuse_em flash partition across reboots, so the
+# power-loss cases of "Protect secrets" can be tested. The keystore of this build lives in
+# nvs_test, never in the board's real nvs.
+# Build: idf.py -B .cache/build/esp32-efusetest -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.efusetest" build
+# Flash only with: tools/flash.py flash --efuse-test (it proves virtual eFuses are on and
+# flash encryption, secure boot and NVS encryption are off).
+# ===========================================================================================
+CONFIG_EFUSE_VIRTUAL=y
+CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH=y
+# CONFIG_EFUSE_VIRTUAL_LOG_ALL_WRITES is not set (it would print the key bytes)
+# CONFIG_NVS_ENCRYPTION is not set
+# CONFIG_SECURE_FLASH_ENC_ENABLED is not set
+# CONFIG_SECURE_BOOT is not set

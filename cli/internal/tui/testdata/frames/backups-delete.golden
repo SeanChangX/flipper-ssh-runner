@@ -1,0 +1,30 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 0     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+
+                      ╭───────────────────────────────────────────────────────────────╮
+                      │                                                               │
+                      │   Delete backup 2026-10-24 09:02:00? This cannot be undone.   │
+                      │                                                               │
+                      │   y yes  ·  n/enter no                                        │
+                      │                                                               │
+                      ╰───────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  enter restore  ·  b back up now  ·  x export  ·  i import  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

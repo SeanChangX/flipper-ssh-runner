@@ -1,0 +1,30 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 0     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+                       ╭──────────────────────────────────────────────────────────────╮
+                       │                                                              │
+                       │   Back up now                                                │
+                       │                                                              │
+                       │   Copies the data folder of Flipper on COM3                  │
+                       │   to ~/.local/share/sshrunner/backups                        │
+                       │                                                              │
+                       │   [ ] Include private keys                                   │
+                       │       Off: this backup cannot bring the private keys back.   │
+                       │                                                              │
+                       │   enter back up  ·  k keys on/off  ·  esc cancel             │
+                       │                                                              │
+                       ╰──────────────────────────────────────────────────────────────╯
+
+
+
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  enter restore  ·  b back up now  ·  x export  ·  i import  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

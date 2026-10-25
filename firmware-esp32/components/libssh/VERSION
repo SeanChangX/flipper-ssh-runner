@@ -1,0 +1,10 @@
+Upstream: https://github.com/ewpa/LibSSH-ESP32
+Tag:      5.10.0 (libssh 0.11.5)
+Tarball:  https://github.com/ewpa/LibSSH-ESP32/archive/refs/tags/5.10.0.tar.gz
+SHA-256:  582471de59b965b8db4619a02e2dca92e722afd782a6548cdf7254ccdbc4c013
+License:  LGPL-2.1 (COPYING), parts BSD-2-Clause (BSD)
+
+Local changes (see docs/DECISIONS.md D6):
+  - CMakeLists.txt replaced: plain ESP-IDF component, no Arduino core.
+  - src/libssh_esp32.cpp removed (Arduino wrapper around ssh_init()).
+Everything under src/ is otherwise byte-identical to the tag.

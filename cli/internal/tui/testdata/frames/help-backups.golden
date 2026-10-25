@@ -1,0 +1,31 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 1     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+                  ╭────────────────────────────────────────────────────────────────────────╮
+                  │                                                                        │
+                  │   Keys: Backups                                                        │
+                  │                                                                        │
+                  │   enter restore (changes shown first)    tab 1-5 next tab / jump       │
+                  │   b     back up now                      ↑ ↓ k j select                │
+                  │   x     export as .zip / .tar.gz         g G     first / last          │
+                  │   i     import an export                 p       push to the Flipper   │
+                  │   d     delete                           r       reload                │
+                  │                                          q       quit                  │
+                  │                                          ?       this help             │
+                  │                                                                        │
+                  │   tab     complete a path        click tab, row, key hint              │
+                  │   tab tab list the matches       wheel scroll                          │
+                  │   ctrl+o  browse files                                                 │
+                  │   ctrl+s  save a form                                                  │
+                  │   esc     cancel                                                       │
+                  │   y n     answer (enter = no)                                          │
+                  │                                                                        │
+                  │   ? close  ·  esc close                                                │
+                  │                                                                        │
+                  ╰────────────────────────────────────────────────────────────────────────╯
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  enter restore  ·  b back up now  ·  x export  ·  i import  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

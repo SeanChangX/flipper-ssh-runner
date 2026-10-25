@@ -1,0 +1,30 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 1     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+            ╭───────────────────────────────────────────────────────────────────────────────────╮
+            │                                                                                   │
+            │   New command                                                                     │
+            │                                                                                   │
+            │   Command           xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  120/127   │
+            │                                                                                   │
+            │   tab next  ·  ←→ choose  ·  ctrl+s save  ·  esc cancel                           │
+            │                                                                                   │
+            ╰───────────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  a add  ·  e edit  ·  d delete  ·  J/K move  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+

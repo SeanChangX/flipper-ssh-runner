@@ -1,0 +1,6 @@
+# Project venv only (python -m venv venv). Never install globally.
+ufbt==0.2.6
+esptool==5.6.0
+pytest==9.1.1
+pyserial==3.5
+pillow==13.0.0

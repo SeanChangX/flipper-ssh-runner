@@ -1,0 +1,30 @@
+
+  SSH Runner  config                                                                         Flipper on COM3
+
+    Hosts 0     Commands 0     Keys 0     Scripts 0     Backups 2
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+                    ╭───────────────────────────────────────────────────────────────────╮
+                    │                                                                   │
+                    │   Restore the backup of 2026-10-24 09:02:00 to Flipper on COM3?   │
+                    │                                                                   │
+                    │   + hosts/nas.conf                                                │
+                    │                                                                   │
+                    │   The Flipper's current state is backed up first.                 │
+                    │                                                                   │
+                    │   y yes  ·  n/enter no                                            │
+                    │                                                                   │
+                    ╰───────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Loaded from Flipper on COM3
+  enter restore  ·  b back up now  ·  x export  ·  i import  ·  d delete  ·  p push  ·  r reload  ·  tab next  ·  ? help  ·  q quit
+
