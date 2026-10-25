@@ -2,7 +2,7 @@
 #   tools/idf.ps1 build        (see tools/check.ps1)
 cmake_minimum_required(VERSION 3.16)
 # The release version (CHANGELOG.md), in the app descriptor and the boot log.
-set(PROJECT_VER "0.2.0")
+set(PROJECT_VER "0.2.1")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(flipper_eth_ssh)
 
