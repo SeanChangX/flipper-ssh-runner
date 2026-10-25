@@ -81,7 +81,7 @@ jobs:
       - name: Build
         working-directory: flipper-app
         run: ufbt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ssh_runner-${{ matrix.sdk }}
           path: flipper-app/dist/ssh_runner.fap
@@ -97,7 +97,7 @@ jobs:
         run: |
           . $IDF_PATH/export.sh
           idf.py -B ../.cache/build/esp32 -D SDKCONFIG=../.cache/build/esp32/sdkconfig build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: firmware
           path: |
