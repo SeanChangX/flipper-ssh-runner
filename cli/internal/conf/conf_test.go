@@ -3,6 +3,7 @@ package conf
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -27,7 +28,7 @@ func stores(t *testing.T, files map[string]string) map[string]store.Store {
 		os.MkdirAll(filepath.Dir(full), 0o700)
 		os.WriteFile(full, []byte(b), 0o600)
 		fp := store.AppDataDir + "/" + p
-		for d := filepath.Dir(fp); d != "/ext"; d = filepath.Dir(d) {
+		for d := path.Dir(fp); d != "/ext"; d = path.Dir(d) {
 			f.Dirs[d] = true
 		}
 		f.Files[fp] = []byte(b)
