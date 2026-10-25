@@ -29,14 +29,21 @@ jobs:
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@v4
-      - run: bash tools/format_c.sh --check
+      # a container job skips the image's entrypoint, so load the IDF environment (pip, cmake)
+      - shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          bash tools/format_c.sh --check
 
   host-tests:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@v4
-      - run: bash tools/host_tests.sh
+      - shell: bash
+        run: |
+          . $IDF_PATH/export.sh
+          bash tools/host_tests.sh
 
   tools-tests:
     runs-on: ubuntu-24.04
