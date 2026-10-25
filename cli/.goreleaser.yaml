@@ -1,6 +1,7 @@
 # Local packaging: scripts/package.sh (it sets the version and runs goreleaser release
-# --snapshot --clean). Builds, archives and checksums into ../.cache/cli-dist; publishes
-# nothing.
+# --snapshot --clean). Builds and archives into ../.cache/cli-dist; publishes nothing.
+# No checksum file of its own: the release's one SHA256SUMS covers these with the other
+# files (tools/release_assets.py).
 version: 2
 project_name: sshrunner
 dist: ../.cache/cli-dist
@@ -42,7 +43,7 @@ archives:
       - third_party/*
 
 checksum:
-  name_template: checksums.txt
+  disable: true
 
 nfpms:
   - package_name: sshrunner

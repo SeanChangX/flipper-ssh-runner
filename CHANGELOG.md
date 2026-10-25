@@ -12,6 +12,20 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+### Changed
+
+- Releases are built by GitHub Actions from the version tag, and every file carries a build
+  provenance attestation.
+- One checksum file, `SHA256SUMS`, covers every file of a release; the PC tool no longer has
+  a checksum file of its own.
+
+### Fixed
+
+- `sshrunner backups import` refuses archive entries that name a Windows device (`NUL`,
+  `COM1`) or an alternate data stream (`a.conf:x`) before writing anything.
+- Hardened the app's text building so that a longer fingerprint or key file could never be
+  written past its buffer (found by CodeQL; not reachable with today's sizes).
+
 ## [0.2.0] - 2026-10-25
 
 First release, for the prototype on the Waveshare ESP32-S3-ETH; a custom add-on PCB is
