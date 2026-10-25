@@ -12,6 +12,8 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-26
+
 ### Changed
 
 - Releases are built by GitHub Actions from the version tag, and every file carries a build
@@ -62,5 +64,6 @@ coming in a later release.
 - One app build for the official firmware `1.5.1` and Unleashed `unlshd-094`, plus an optional
   Unleashed-only build.
 
-[Unreleased]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SeanChangX/flipper-ssh-runner/releases/tag/v0.2.0
