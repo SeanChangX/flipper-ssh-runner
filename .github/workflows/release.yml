@@ -57,6 +57,7 @@ jobs:
         with:
           app-dir: flipper-app
           sdk-url: ${{ steps.sdk.outputs.url }}
+          sdk-hw-target: f7 # a direct SDK URL needs the target
           ufbt-version: "==0.2.6" # as requirements.txt
       - uses: actions/upload-artifact@v7
         with:
