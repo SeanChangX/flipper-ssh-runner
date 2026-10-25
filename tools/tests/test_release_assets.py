@@ -76,5 +76,17 @@ def test_notes_are_one_line_per_paragraph_and_item():
     md = "Intro that\nwraps here.\n\n### Added\n\n- An item that\n  goes on.\n- Another.\n"
     assert ra.unwrap(md) == "Intro that wraps here.\n\n### Added\n\n- An item that goes on.\n- Another."
     notes = ra.notes(VER)
-    assert notes.startswith("Released ") and "## Install" in notes
+    assert "## Install" in notes
     assert f"/blob/v{VER}/docs/" in notes
+
+
+def test_notes_keep_the_approved_layout():
+    notes = ra.notes(VER)
+    # the release shows its own title and date
+    assert "Released" not in notes and f"[{VER}]" not in notes
+    # every heading at the level of "## Install"
+    heads = [line for line in notes.splitlines() if line.startswith("#")]
+    assert len(heads) > 1 and all(h.startswith("## ") for h in heads)
+    assert "On a first install, erase the flash first; on an update, don't erase, and don't merge " \
+        "the parts into one image at offset 0." in notes
+    assert "no Erase" not in notes
