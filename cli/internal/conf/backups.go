@@ -357,7 +357,7 @@ type archiveEntry struct {
 // backup folder at the top.
 func safeEntry(name string) (top, rel string, err error) {
 	if name == "" || strings.Contains(name, "\\") || strings.HasPrefix(name, "/") || path.IsAbs(name) ||
-		(len(name) > 1 && name[1] == ':') {
+		(len(name) > 1 && name[1] == ':') || !filepath.IsLocal(name) {
 		return "", "", fmt.Errorf("unsafe path in the archive: %q", name)
 	}
 	for _, part := range strings.Split(strings.TrimSuffix(name, "/"), "/") {
@@ -374,6 +374,11 @@ func readArchive(file string) ([]archiveEntry, error) {
 	var out []archiveEntry
 	total := int64(0)
 	add := func(name string, r io.Reader, size int64) error {
+		// a name must stay inside the folder it is unpacked into: not absolute, no "..", and
+		// on Windows no reserved device name (NUL, COM1) or ":" (an alternate data stream)
+		if !filepath.IsLocal(name) {
+			return fmt.Errorf("unsafe path in the archive: %q", name)
+		}
 		total += size
 		if size < 0 || total > importMax {
 			return fmt.Errorf("the archive unpacks to more than %d MB", importMax>>20)

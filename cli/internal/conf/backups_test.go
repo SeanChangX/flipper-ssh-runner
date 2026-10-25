@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -300,5 +301,30 @@ func TestImportRefuses(t *testing.T) {
 	// a valid one for contrast
 	if _, err := ImportBackup(writeZip(t, []member{{name: id + "/" + ManifestFile, body: good}}), t.TempDir()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Names that stay inside the folder but are not plain files on Windows: a reserved device
+// name or an alternate data stream. They are refused before anything is written.
+func TestImportRefusesWindowsNames(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("these names are ordinary files elsewhere")
+	}
+	const id = "sshrunner-20261024-090000"
+	good := `{"created":"2026-10-24T09:00:00Z","source":"x","files":{}}`
+	for _, bad := range []string{id + "/NUL", id + "/hosts/COM1", id + "/hosts/a.conf:x"} {
+		for kind, write := range map[string]func(*testing.T, []member) string{"zip": writeZip, "tar.gz": writeTarGz} {
+			t.Run(bad+" "+kind, func(t *testing.T) {
+				parent := t.TempDir()
+				ms := []member{{name: id + "/" + ManifestFile, body: good}, {name: bad, body: "x"}}
+				_, err := ImportBackup(write(t, ms), parent)
+				if err == nil || !strings.Contains(err.Error(), "unsafe path") {
+					t.Fatalf("not refused as unsafe: %v", err)
+				}
+				if left, _ := os.ReadDir(parent); len(left) != 0 {
+					t.Fatalf("left behind: %v", left)
+				}
+			})
+		}
 	}
 }
