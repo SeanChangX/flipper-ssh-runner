@@ -35,7 +35,7 @@ edges with no series resistor on SCLK (Kconfig `FES_W5500_SPI_SOFT_EDGES`, on by
 | GPIO | Use | Notes |
 |---|---|---|
 | 4–7 | TF slot (CS 4, MISO 5, MOSI 6, SCK 7) | leave alone |
-| 21 | WS2812 RGB LED | leave alone |
+| 21 | WS2812 RGB LED | status LED (see "Status LED" below) |
 | 19, 20 | native USB (USB-C), used by the USB-Serial-JTAG console | leave alone |
 | 0 | BOOT button (strapping) | leave alone |
 | 33–37 | header H2 only, but taken by the octal PSRAM on the S3R8 | do not use |
@@ -43,6 +43,31 @@ edges with no series resistor on SCLK (Kconfig `FES_W5500_SPI_SOFT_EDGES`, on by
 | 1–3, 8, 15, 18, 38–42, 45–48 | camera connector (8 = camera power; 16 can be VSYNC through the R29 option resistor) | free when no camera is fitted |
 | 17 | header H1 pin 7 only | free |
 | 26 | SPICS1, the PSRAM chip select inside the S3R8 | do not use |
+
+### Status LED
+
+One LED with the usual single-LED patterns, at a low duty cycle (on the custom board it runs on
+the Flipper's battery). Which LED depends on the board, a Kconfig choice (`idf.py menuconfig` >
+*SSH Runner* > *Board*):
+
+- **Waveshare ESP32-S3-ETH** (the default, and the release firmware): the WS2812 on GPIO21,
+  shown dim red.
+- **SSH Runner rev 0.1** (the custom board; build with `sdkconfig.rev0_1`): the green LED D201
+  on GPIO21, lit when the pin is high.
+
+*SSH Runner* > *Status LED* can turn it off for good. The RJ45 LEDs are the W5500's own.
+
+| Pattern | Means |
+|---|---|
+| one short flash | boot |
+| 100 ms flash every second | a link coming up (a WiFi join; or no link up yet and the saved WiFi or the LAN on its way) |
+| on for 1 s, then dark | a link came up; dark means all is well |
+| two short flashes every 2 s | an SSH session is open |
+| 5 fast flashes | an error: WiFi join failed, a link lost, an SSH session failed, or the last reset was a crash, watchdog or brownout |
+
+Console: `led` (mode and pattern now), `led off` / `led auto` (kept in NVS, default `auto`),
+`led test` (each pattern for 3 s, also when off). `status` shows the LED line too.
+State machine: `firmware-esp32/components/statusled/statusled_sm.c` (host-tested).
 
 ### Flipper Link
 

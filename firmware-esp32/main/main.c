@@ -14,7 +14,9 @@
 #include "keystore.h"
 #include "net.h"
 #include "proto/proto.h"
+#include "sdkconfig.h"
 #include "ssh_client.h"
+#include "statusled.h"
 
 static const char* TAG = "main";
 
@@ -23,8 +25,9 @@ void app_main(void) {
     esp_chip_info(&chip);
     ESP_LOGI(
         TAG,
-        "%s: %d core(s), rev %d, protocol v%d, psram %u KB",
+        "%s on %s: %d core(s), rev %d, protocol v%d, psram %u KB",
         app_fw_version(),
+        CONFIG_FES_BOARD_NAME,
         chip.cores,
         chip.revision,
         PROTO_VERSION,
@@ -34,6 +37,7 @@ void app_main(void) {
     bootinfo_init(); /* after NVS is up: count this boot and its reset reason */
     ESP_ERROR_CHECK(net_init(app_net_status_changed, NULL));
     ESP_ERROR_CHECK(ssh_client_init());
+    statusled_start();
     app_link_start();
     console_start();
 }
