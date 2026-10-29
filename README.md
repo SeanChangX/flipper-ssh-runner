@@ -104,6 +104,16 @@ Every screen below is from the app's [demo mode](flipper-app/README.md#without-t
 Pin details: [Hardware and Wiring](docs/HARDWARE.md). A custom add-on PCB that plugs straight into
 the Flipper is coming in a later release.
 
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/media/pcb-rev0.1-top.png" width="100%" alt="3D render of the SSH Runner rev 0.1 board from above at an angle: the ESP32-S3 module, the W5500 chip, a USB-C port, an RJ45 jack and two rows of right-angle header pins on black solder mask"></td>
+<td width="50%" align="center"><img src="docs/media/pcb-rev0.1-bottom.png" width="100%" alt="3D render of the SSH Runner rev 0.1 board from below: the SSH Runner name, rev 0.1, the project's GitHub address and a logo in white on black, with the header pins along the bottom edge"></td>
+</tr>
+</table>
+
+<p align="center">SSH Runner rev 0.1, the custom add-on PCB: in production; design files will be
+published with v0.3.0 after bring-up.</p>
+
 ## Installation
 
 Download the files from the [latest release](https://github.com/SeanChangX/flipper-ssh-runner/releases/latest).
