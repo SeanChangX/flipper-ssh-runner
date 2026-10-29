@@ -13,17 +13,18 @@ add_library(fwcore STATIC
   ${FW}/components/net/ping_stats.c
   ${FW}/components/net/route_policy.c
   ${FW}/components/bootinfo/bootstats.c
+  ${FW}/components/statusled/statusled_sm.c
   ${PROTO}/src/proto_frame.c
   ${PROTO}/src/proto_msg.c
   ${PROTO}/src/proto_link.c
 )
 target_include_directories(fwcore PUBLIC
-  ${FW}/components/bootinfo/include ${FW}/components/keystore/include ${FW}/components/link/include ${FW}/components/net/include ${PROTO}/include ${PROTO}/tests)
+  ${FW}/components/bootinfo/include ${FW}/components/statusled/include ${FW}/components/keystore/include ${FW}/components/link/include ${FW}/components/net/include ${PROTO}/include ${PROTO}/tests)
 target_compile_options(fwcore PRIVATE -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all)
 target_link_options(fwcore INTERFACE -fsanitize=address,undefined)
 
 enable_testing()
-foreach(t hostkey_policy link_dispatch join_policy ping_stats route_policy bootstats)
+foreach(t hostkey_policy link_dispatch join_policy ping_stats route_policy bootstats statusled)
   add_executable(test_${t} test_${t}.c)
   target_link_libraries(test_${t} PRIVATE fwcore)
   target_compile_options(test_${t} PRIVATE -Wall -Wextra -Werror -fsanitize=address,undefined)

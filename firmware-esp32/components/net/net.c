@@ -51,6 +51,7 @@ static struct {
     bool eth_link;
     bool wifi_link;
     bool joining;
+    uint32_t join_failures;
     uint8_t join_tries;
     uint8_t join_result; /* JOIN_RESULT_* over this join's tries, 0 = none yet */
     bool join_result_pending; /* finished: app.c sends WIFI_JOIN_RESULT before the status */
@@ -115,6 +116,12 @@ void net_get_status(ProtoNetStatus* out) {
             snprintf(out->wifi_ssid, sizeof(out->wifi_ssid), "%s", (const char*)ap.ssid);
         }
     }
+}
+
+void net_get_activity(NetActivity* out) {
+    out->joining = s.joining;
+    out->rejoining = s.auto_rejoin && !s.wifi_link && !s.joining;
+    out->join_failures = s.join_failures;
 }
 
 static esp_err_t apply_ip(esp_netif_t* n, const ProtoNetCfg* cfg) {
@@ -201,6 +208,7 @@ static void join_finished(bool ok) {
     s.join_last.result = ok ? ProtoJoinOk : s.join_result ? s.join_result : ProtoJoinFailed;
     s.join_result_pending = true;
     if(ok) keystore_wifi_set(s.join_ssid, s.join_pass);
+    if(!ok) s.join_failures++;
     memset(s.join_pass, 0, sizeof(s.join_pass));
     ESP_LOGI(
         TAG,

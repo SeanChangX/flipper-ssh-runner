@@ -34,6 +34,13 @@ bool net_take_join_result(ProtoWifiJoinResult* out);
  * board (console `wifi rejoin`). ESP_ERR_NOT_FOUND if nothing is saved. */
 esp_err_t net_wifi_rejoin(void);
 esp_err_t net_wifi_forget(void);
+/* For the status LED: a link on its way up, and failed joins. */
+typedef struct {
+    bool joining; /* a join someone asked for */
+    bool rejoining; /* keeping on rejoining the saved network, not associated */
+    uint32_t join_failures; /* since boot */
+} NetActivity;
+void net_get_activity(NetActivity* out);
 esp_err_t net_ping(const ProtoPingReq* req, NetPingCallback cb, void* ctx);
 void net_ping_cancel(void);
 

@@ -19,7 +19,7 @@ SKIP=()
 while [ $# -gt 0 ]; do
     case "$1" in
     --skip) SKIP+=("$2"); shift 2 ;;
-    *) echo "usage: $0 [--skip proto-mirror|c-format|host-tests|tools-tests|fap|firmware|firmware-efusetest]..." >&2; exit 2 ;;
+    *) echo "usage: $0 [--skip proto-mirror|c-format|host-tests|tools-tests|fap|firmware|firmware-efusetest|firmware-rev0_1]..." >&2; exit 2 ;;
     esac
 done
 
@@ -143,6 +143,13 @@ s_firmware_efusetest() {
         -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.efusetest" build
 }
 
+# the other board: SSH Runner rev 0.1 (sdkconfig.rev0_1 picks it; the default is the prototype)
+s_firmware_rev0_1() {
+    idf /project/firmware-esp32 idf.py -B /project/.cache/build/esp32-rev0_1 \
+        -D SDKCONFIG=/project/.cache/build/esp32-rev0_1/sdkconfig \
+        -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.rev0_1" build
+}
+
 step proto-mirror s_proto_mirror
 step c-format s_c_format
 step host-tests s_host_tests
@@ -151,6 +158,7 @@ step cli s_cli
 step fap s_fap
 step firmware s_firmware
 step firmware-efusetest s_firmware_efusetest
+step firmware-rev0_1 s_firmware_rev0_1
 
 echo
 echo "== summary"
