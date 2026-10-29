@@ -17,7 +17,9 @@
     Footprint: everything generated stays in venv\ or .cache\ inside the repo
     (uFBT SDKs, builds, ccache, pip, pytest, pycache). Docker runs with --rm, bind-mounts
     only this folder and uses no named volumes. Docker Desktop must already be running;
-    this script never starts it. .github/workflows/check.yml mirrors these steps.
+    this script never starts it. .github/workflows/check.yml mirrors these steps; it runs
+    c-format and host-tests on the plain runner instead of the IDF container, and caches
+    ccache for the firmware builds.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\check.ps1

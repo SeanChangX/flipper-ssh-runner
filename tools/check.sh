@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Local gate for Linux / WSL. Same steps as tools/check.ps1 (Windows) and
-# .github/workflows/check.yml; keep all three in sync.
+# .github/workflows/check.yml; keep all three in sync. CI runs c-format and host-tests on the
+# plain runner rather than in the IDF container, and caches ccache for the firmware builds.
 #
 #   tools/check.sh                 # everything
 #   tools/check.sh --skip firmware # quick iteration (not a merge gate)
