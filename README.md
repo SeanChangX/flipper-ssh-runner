@@ -214,7 +214,6 @@ model, details and how to report a vulnerability: [docs/SECURITY.md](docs/SECURI
 
 - Custom add-on PCB for the Flipper's GPIO header
 - Several saved WiFi networks, joining whichever is in range
-- Board status LED
 
 ## Contributing
 

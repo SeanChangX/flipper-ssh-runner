@@ -27,6 +27,21 @@ void bootstats_count(BootStats* s, int reason) {
     s->last = (uint8_t)(reason >= 0 && reason <= 255 ? reason : BOOT_RST_UNKNOWN);
 }
 
+bool bootstats_is_fault(int reason) {
+    switch(reason) {
+    case BOOT_RST_PANIC:
+    case BOOT_RST_CPU_LOCKUP:
+    case BOOT_RST_INT_WDT:
+    case BOOT_RST_TASK_WDT:
+    case BOOT_RST_WDT:
+    case BOOT_RST_BROWNOUT:
+    case BOOT_RST_PWR_GLITCH:
+        return true;
+    default:
+        return false;
+    }
+}
+
 const char* bootstats_reason_name(int reason) {
     static const char* const names[] = {
         "unknown",

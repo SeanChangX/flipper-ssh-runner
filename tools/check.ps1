@@ -12,11 +12,14 @@
       6. fap              - SSH Runner built with uFBT against every SDK in flipper-app/SDK_VERSION
       7. firmware         - ESP-IDF firmware built in the pinned container (firmware-esp32/IDF_VERSION)
       8. firmware-efusetest - same with the virtual-eFuse test overlay (sdkconfig.efusetest)
+      9. firmware-rev0_1 - same for the SSH Runner rev 0.1 board (sdkconfig.rev0_1)
 
     Footprint: everything generated stays in venv\ or .cache\ inside the repo
     (uFBT SDKs, builds, ccache, pip, pytest, pycache). Docker runs with --rm, bind-mounts
     only this folder and uses no named volumes. Docker Desktop must already be running;
-    this script never starts it. .github/workflows/check.yml mirrors these steps.
+    this script never starts it. .github/workflows/check.yml mirrors these steps; it runs
+    c-format and host-tests on the plain runner instead of the IDF container, and caches
+    ccache for the firmware builds.
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\check.ps1
@@ -24,7 +27,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet("proto-mirror", "c-format", "host-tests", "tools-tests", "cli", "fap", "firmware", "firmware-efusetest")]
+    [ValidateSet("proto-mirror", "c-format", "host-tests", "tools-tests", "cli", "fap", "firmware", "firmware-efusetest", "firmware-rev0_1")]
     [string[]]$Skip = @()
 )
 
@@ -191,6 +194,13 @@ Step "firmware-efusetest" {
     (Invoke-Idf "/project/firmware-esp32" @("idf.py", "-B", "/project/.cache/build/esp32-efusetest",
             "-D", "SDKCONFIG=/project/.cache/build/esp32-efusetest/sdkconfig",
             "-D", "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.efusetest", "build")) -eq 0
+}
+
+Step "firmware-rev0_1" {
+    Assert-Docker
+    (Invoke-Idf "/project/firmware-esp32" @("idf.py", "-B", "/project/.cache/build/esp32-rev0_1",
+            "-D", "SDKCONFIG=/project/.cache/build/esp32-rev0_1/sdkconfig",
+            "-D", "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.rev0_1", "build")) -eq 0
 }
 
 Write-Host ""

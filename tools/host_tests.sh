@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds and runs every host unit-test suite. Runs inside the pinned espressif/idf
-# container (see tools/check.ps1), or on any Linux box with gcc + cmake.
+# container (the local gate, tools/check.ps1) or on any Linux box with gcc + cmake (CI).
 # Build trees go to .cache/build/<suite> inside the repo (footprint rule).
 set -euo pipefail
 cd "$(dirname "$0")/.."

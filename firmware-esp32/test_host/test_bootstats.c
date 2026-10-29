@@ -38,8 +38,20 @@ static void test_names(void) {
     TT_EQ_INT(s.last, BOOT_RST_UNKNOWN);
 }
 
+static void test_faults(void) {
+    TT_CHECK(bootstats_is_fault(BOOT_RST_BROWNOUT));
+    TT_CHECK(bootstats_is_fault(BOOT_RST_PWR_GLITCH));
+    TT_CHECK(bootstats_is_fault(BOOT_RST_TASK_WDT));
+    TT_CHECK(bootstats_is_fault(BOOT_RST_PANIC));
+    TT_CHECK(!bootstats_is_fault(BOOT_RST_POWERON));
+    TT_CHECK(!bootstats_is_fault(BOOT_RST_SW));
+    TT_CHECK(!bootstats_is_fault(BOOT_RST_USB));
+    TT_CHECK(!bootstats_is_fault(-1));
+}
+
 int main(void) {
     TT_RUN(test_counts);
     TT_RUN(test_names);
+    TT_RUN(test_faults);
     TT_END();
 }

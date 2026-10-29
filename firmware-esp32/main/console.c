@@ -41,6 +41,7 @@
 #include "lwip/inet.h"
 #include "net.h"
 #include "sdkconfig.h"
+#include "statusled.h"
 
 #if CONFIG_FES_CONSOLE
 
@@ -223,6 +224,29 @@ static int cmd_status(int argc, char** argv) {
         (unsigned long)bs->watchdog,
         (unsigned long)bs->crash,
         (unsigned long)bs->other);
+    printf(
+        "LED : %s (%s)\n",
+        statusled_mode() == STATUSLED_OFF ? "off" : "auto",
+        ledsm_pattern_name(statusled_pattern()));
+    return 0;
+}
+
+static int cmd_led(int argc, char** argv) {
+    if(argc >= 2 && !strcmp(argv[1], "test")) {
+        statusled_test();
+        printf("lamp test: boot, linking, link up, ssh, error, 3 s each\n");
+        return 0;
+    }
+    if(argc >= 2) {
+        bool off = !strcmp(argv[1], "off");
+        if(!off && strcmp(argv[1], "auto")) return 1;
+        if(statusled_set_mode(off ? STATUSLED_OFF : STATUSLED_AUTO) != ESP_OK) return 1;
+    }
+    printf(
+        "led: %s (%s), %s\n",
+        statusled_mode() == STATUSLED_OFF ? "off" : "auto",
+        ledsm_pattern_name(statusled_pattern()),
+        statusled_driver_name());
     return 0;
 }
 
@@ -824,6 +848,7 @@ void console_start(void) {
     esp_console_register_help_command();
     reg("status", "network and SSH state", cmd_status);
     reg("heap", "free heap", cmd_heap);
+    reg("led", "status LED: led [off|auto] | led test", cmd_led);
     reg("link", "Flipper link counters; link tx [n] | link mute [s] (wiring tests)", cmd_link);
     reg("wifi", "wifi scan | wifi join <ssid> [password] | wifi rejoin | wifi forget", cmd_wifi);
     reg("netcfg", "netcfg lan|wifi dhcp | static <ip> <mask> <gw> [dns]", cmd_netcfg);

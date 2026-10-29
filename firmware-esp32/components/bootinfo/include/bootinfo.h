@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 /* esp_reset_reason_t's values (ESP-IDF 5.5), so the counting is testable on a host. */
@@ -41,6 +42,9 @@ typedef struct {
 
 /* Pure: count one boot with its reason. */
 void bootstats_count(BootStats* s, int reason);
+/* Pure: a reset the board did not ask for (crash, watchdog, brownout): the status LED
+ * shows an error burst after such a boot. */
+bool bootstats_is_fault(int reason);
 /* Pure: "brownout", "power-on", ... for BOOT_RST_*. */
 const char* bootstats_reason_name(int reason);
 
