@@ -6,6 +6,12 @@ Flipper Zero app for the SSH Runner add-on board (ESP32-S3 + W5500 Ethernet + Wi
 Pick a host, authenticate with a password or an SSH key from the SD card, then run one command
 or a script from the SD card and read its output and exit code.
 
+**The app needs the ESP32-S3 board.** Today that is a Waveshare ESP32-S3-ETH running the SSH
+Runner firmware, wired to the Flipper's GPIO header as in
+[Hardware and Wiring](../docs/HARDWARE.md); the [Quick Start](../docs/QUICKSTART.md) goes from
+the parts to the first command. Without the board the app cannot connect (only the demo build
+runs without it, see [Without the Board](#without-the-board)).
+
 ## Contents
 
 - [Usage](#usage)
