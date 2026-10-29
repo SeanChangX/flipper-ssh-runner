@@ -24,26 +24,22 @@ jobs:
         with: { python-version: "3.12" }
       - run: python tools/sync_proto.py --check
 
+  # c-format and host-tests need no IDF: they run on the plain runner instead of pulling the
+  # IDF image (the local gate runs them in it). format_c.sh installs and checks the pinned
+  # clang-format itself; the runner image has gcc and cmake.
   c-format:
     runs-on: ubuntu-24.04
-    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # a container job skips the image's entrypoint, so load the IDF environment (pip, cmake)
-      - shell: bash
-        run: |
-          . $IDF_PATH/export.sh
-          bash tools/format_c.sh --check
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with: { python-version: "3.12" }
+      - run: bash tools/format_c.sh --check
 
   host-tests:
     runs-on: ubuntu-24.04
-    container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - shell: bash
-        run: |
-          . $IDF_PATH/export.sh
-          bash tools/host_tests.sh
+      - run: bash tools/host_tests.sh
 
   tools-tests:
     runs-on: ubuntu-24.04
@@ -91,12 +87,20 @@ jobs:
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # ccache across runs: a new entry per commit, restored from the newest one of the same IDF
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/ccache
+          key: ccache-firmware-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-${{ github.sha }}
+          restore-keys: ccache-firmware-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-
       - name: Build
         shell: bash
         working-directory: firmware-esp32
         run: |
           . $IDF_PATH/export.sh
+          export CCACHE_DIR=$GITHUB_WORKSPACE/.cache/ccache IDF_CCACHE_ENABLE=1 CCACHE_MAXSIZE=400M
           idf.py -B ../.cache/build/esp32 -D SDKCONFIG=../.cache/build/esp32/sdkconfig build
+          ccache -s
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: firmware
@@ -111,9 +115,17 @@ jobs:
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # ccache across runs: a new entry per commit, restored from the newest one of the same IDF
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/ccache
+          key: ccache-firmware-efusetest-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-${{ github.sha }}
+          restore-keys: ccache-firmware-efusetest-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-
       - name: Build the virtual-eFuse test overlay
         shell: bash
         working-directory: firmware-esp32
         run: |
           . $IDF_PATH/export.sh
+          export CCACHE_DIR=$GITHUB_WORKSPACE/.cache/ccache IDF_CCACHE_ENABLE=1 CCACHE_MAXSIZE=400M
           idf.py -B ../.cache/build/esp32-efusetest -D SDKCONFIG=../.cache/build/esp32-efusetest/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.efusetest" build
+          ccache -s

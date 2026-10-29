@@ -5,10 +5,10 @@
 #   tools/format_c.sh           # format in place
 #   tools/format_c.sh --check   # change nothing; fail if a file is not formatted (the gate)
 #
-# Runs inside the pinned espressif/idf container (see tools/check.ps1), or on any Linux box.
+# Runs inside the pinned espressif/idf container (the local gate) or on any Linux box (CI).
 # clang-format is the pinned PyPI build (LLVM's own binaries), installed into
 # .cache/clang-format/<version> on first use; CLANG_FORMAT names another binary of the same
-# version instead (CI).
+# version instead.
 #
 # Not formatted: code that is not ours or not written by hand: the vendored libssh, the
 # flipper-app/lib/proto/ copy (tools/sync_proto.py makes it from proto/), and the font tables
