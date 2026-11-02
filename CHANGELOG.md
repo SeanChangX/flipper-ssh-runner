@@ -28,6 +28,8 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 - The ESP32 runs at 240 MHz instead of 160 MHz: SSH logins are faster, with RSA keys above
   all.
+- The ESP32 firmware is compiled for speed (`-O2`) instead of ESP-IDF's debug default (`-Og`):
+  SSH logins take about 40 % less time again, and the app is 30 KB smaller.
 - The board's USB console log leaves out the WiFi driver's start-up details; its warnings and
   errors still show.
 - The release files have a new layout: a firmware zip per board, named for it (`waveshare` for
