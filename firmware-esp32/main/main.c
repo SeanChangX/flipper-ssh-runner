@@ -26,6 +26,7 @@ static const char* const QUIET_TAGS[] =
     {"wifi", "wifi_init", "pp", "net80211", "phy_init", "esp_netif_handlers"};
 
 void app_main(void) {
+    statusled_init();
     for(size_t i = 0; i < sizeof(QUIET_TAGS) / sizeof(QUIET_TAGS[0]); i++)
         esp_log_level_set(QUIET_TAGS[i], ESP_LOG_WARN);
 

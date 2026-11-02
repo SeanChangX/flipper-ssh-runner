@@ -5,9 +5,10 @@
  * battery:
  *
  *   boot      one 150 ms flash at start
- *   linking   a 100 ms flash every second (10 %) while a link is coming up
+ *   linking   a 100 ms flash every second (10 %) while a link or an SSH session is coming
+ *             up
  *   link up   on for 1 s when a link comes up, then dark (dark = all is well)
- *   ssh       heartbeat while a session is open: two 60 ms flashes every 2 s (6 %)
+ *   ssh       heartbeat while a session is open (logged in): two 60 ms flashes every 2 s (6 %)
  *   error     a burst of 5 fast flashes: WiFi join failed, a link lost, an SSH session
  *             failed, or the last reset was a crash, watchdog or brownout
  *
@@ -41,7 +42,8 @@ typedef struct {
     bool joining; /* a WiFi join someone asked for */
     bool background_linking; /* rejoining the saved WiFi, or LAN cable in and no address yet */
     uint8_t links_up; /* interfaces with an IPv4 address */
-    bool ssh_active; /* a session between connecting and closed */
+    bool ssh_connecting; /* connecting, a host-key or password prompt, authenticating */
+    bool ssh_open; /* logged in: ready or running a command */
     bool ssh_failed;
     uint32_t join_failures; /* failed WiFi joins since boot */
 } LedInputs;

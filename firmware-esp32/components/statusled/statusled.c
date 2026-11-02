@@ -22,6 +22,7 @@ static volatile StatusLedMode mode;
 static volatile LedPattern shown;
 static volatile uint32_t test_start;
 static volatile bool testing;
+static bool driver_ok;
 
 static const LedPattern test_order[] =
     {LED_PAT_BOOT, LED_PAT_LINKING, LED_PAT_LINK_UP, LED_PAT_SSH, LED_PAT_ERROR};
@@ -41,7 +42,9 @@ static void sample(LedInputs* in) {
     in->background_linking = act.rejoining ||
                              ((st.lan.flags & PROTO_NET_LINK) && !(st.lan.flags & PROTO_NET_IP));
     in->links_up = (uint8_t)(!!(st.lan.flags & PROTO_NET_IP) + !!(st.wifi.flags & PROTO_NET_IP));
-    in->ssh_active = ssh != ProtoSshIdle && ssh != ProtoSshClosed && ssh != ProtoSshFailed;
+    in->ssh_open = ssh == ProtoSshReady || ssh == ProtoSshRunning;
+    in->ssh_connecting = !in->ssh_open && ssh != ProtoSshIdle && ssh != ProtoSshClosed &&
+                         ssh != ProtoSshFailed;
     in->ssh_failed = ssh == ProtoSshFailed;
     in->join_failures = act.join_failures;
 }
@@ -87,7 +90,18 @@ static void led_task(void* arg) {
     }
 }
 
+void statusled_init(void) {
+    esp_err_t err = statusled_driver.init();
+    if(err != ESP_OK) {
+        ESP_LOGW(TAG, "%s driver: %s, no status LED", statusled_driver.name, esp_err_to_name(err));
+        return;
+    }
+    driver_ok = true;
+    statusled_driver.set(false);
+}
+
 void statusled_start(void) {
+    if(!driver_ok) return;
     nvs_handle_t h;
     uint8_t m = STATUSLED_AUTO;
     if(nvs_open("statusled", NVS_READONLY, &h) == ESP_OK) {
@@ -95,11 +109,6 @@ void statusled_start(void) {
         nvs_close(h);
     }
     mode = m == STATUSLED_OFF ? STATUSLED_OFF : STATUSLED_AUTO;
-    esp_err_t err = statusled_driver.init();
-    if(err != ESP_OK) {
-        ESP_LOGW(TAG, "%s driver: %s, no status LED", statusled_driver.name, esp_err_to_name(err));
-        return;
-    }
     if(xTaskCreate(led_task, "statusled", 3072, NULL, 2, NULL) != pdPASS)
         ESP_LOGW(TAG, "no task, no status LED");
     ESP_LOGI(TAG, "%s, %s", statusled_driver.name, mode == STATUSLED_OFF ? "off" : "auto");

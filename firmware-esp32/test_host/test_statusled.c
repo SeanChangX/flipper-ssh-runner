@@ -76,15 +76,47 @@ static void test_ssh_heartbeat(void) {
     ledsm_init(&sm, 0, false);
     in.links_up = 1;
     run(&sm, 0, 3000, &in);
-    in.ssh_active = true;
+    in.ssh_open = true;
     TT_EQ_INT(run(&sm, 3000, 7000, &in), 24); /* two 60 ms flashes per 2 s */
     TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_SSH);
     TT_CHECK(
         ledsm_lit(LED_PAT_SSH, 0) && !ledsm_lit(LED_PAT_SSH, 100) && ledsm_lit(LED_PAT_SSH, 200));
     TT_CHECK(!ledsm_lit(LED_PAT_SSH, 1000));
-    in.ssh_active = false;
+    in.ssh_open = false;
     ledsm_step(&sm, 7000, &in);
     TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_DARK);
+}
+
+static void test_ssh_connecting_blinks_until_logged_in(void) {
+    LedSm sm;
+    LedInputs in = none();
+    ledsm_init(&sm, 0, false);
+    in.links_up = 1;
+    run(&sm, 0, 3000, &in);
+    in.ssh_connecting = true; /* TCP, key exchange, prompts, authentication */
+    TT_EQ_INT(run(&sm, 3000, 6000, &in), 30); /* the linking blink, no heartbeat */
+    TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_LINKING);
+    in.ssh_connecting = false;
+    in.ssh_open = true; /* logged in */
+    ledsm_step(&sm, 6000, &in);
+    TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_SSH);
+}
+
+static void test_ssh_connect_that_fails_never_shows_the_heartbeat(void) {
+    LedSm sm;
+    LedInputs in = none();
+    ledsm_init(&sm, 0, false);
+    in.links_up = 1;
+    run(&sm, 0, 3000, &in);
+    in.ssh_connecting = true; /* a closed port: a 10 s timeout */
+    for(uint32_t t = 3000; t < 13000; t += 10) {
+        ledsm_step(&sm, t, &in);
+        TT_CHECK(ledsm_pattern(&sm) != LED_PAT_SSH);
+    }
+    in.ssh_connecting = false;
+    in.ssh_failed = true;
+    ledsm_step(&sm, 13000, &in);
+    TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_ERROR);
 }
 
 static void test_errors_burst(void) {
@@ -103,9 +135,9 @@ static void test_errors_burst(void) {
     TT_EQ_INT(ledsm_pattern(&sm), LED_PAT_ERROR);
     run(&sm, 6010, 7000, &in);
 
-    in.ssh_active = true;
+    in.ssh_open = true;
     run(&sm, 7000, 8000, &in);
-    in.ssh_active = false;
+    in.ssh_open = false;
     in.ssh_failed = true; /* a session failed: one burst, not one per tick */
     TT_EQ_INT(run(&sm, 8000, 8000 + LED_ERROR_MS, &in), LED_ERROR_FLASHES * 6);
     TT_EQ_INT(run(&sm, 8000 + LED_ERROR_MS, 12000, &in), 0);
@@ -133,7 +165,7 @@ static void test_error_wins_and_restarts(void) {
     LedSm sm;
     LedInputs in = none();
     ledsm_init(&sm, 0, false);
-    in.ssh_active = true;
+    in.ssh_open = true;
     run(&sm, 0, 1000, &in);
     ledsm_error(&sm, 1000);
     TT_CHECK(ledsm_step(&sm, 1000, &in));
@@ -177,6 +209,8 @@ int main(void) {
     TT_RUN(test_linking_slow_blink_then_link_up);
     TT_RUN(test_background_rejoin_hidden_while_a_link_is_up);
     TT_RUN(test_ssh_heartbeat);
+    TT_RUN(test_ssh_connecting_blinks_until_logged_in);
+    TT_RUN(test_ssh_connect_that_fails_never_shows_the_heartbeat);
     TT_RUN(test_errors_burst);
     TT_RUN(test_rejoin_drop_is_no_error);
     TT_RUN(test_error_wins_and_restarts);
