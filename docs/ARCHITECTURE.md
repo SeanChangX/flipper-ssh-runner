@@ -40,6 +40,7 @@ keeps hosts, keys and scripts on the SD card. They talk over UART with the proto
 | `tools/flash.py` | Flash the firmware build with esptool; refuses any image that would burn eFuses. |
 | `tools/flipper/` | RPC tooling for on-device tests, read-only by default; every session is snapshot, test, restore, verify. |
 | `tools/hil/` | Hardware-in-the-loop tests driven from the ESP32's USB console against a test sshd. |
+| `hardware/` | The add-on board: KiCad 10 sources, fabrication files and their tools ([`hardware/README.md`](../hardware/README.md)). |
 
 ## Flipper App Data Flow
 

@@ -4,3 +4,7 @@
 *.jpg binary
 *.fap binary
 *.bin binary
+*.zip binary
+*.pdf binary
+# Fabrication files are kept byte-for-byte as cam.py writes them (JLC CSVs use CRLF)
+hardware/fab/** -text
