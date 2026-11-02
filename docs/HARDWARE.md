@@ -65,6 +65,10 @@ the Flipper's battery). Which LED depends on the board, a Kconfig choice (`idf.p
 | two short flashes every 2 s | an SSH session is open (logged in) |
 | 5 fast flashes | an error: WiFi join failed, a link lost, an SSH session failed, or the last reset was a crash, watchdog or brownout |
 
+On the Waveshare ESP32-S3-ETH the WS2812 can show a brief red (about 1 s) at a restart: it
+latches noise on its data line while GPIO21 floats during the reset, until the firmware starts
+and turns it dark. The add-on board's single-colour LED does not latch, so it stays dark.
+
 Console: `led` (mode and pattern now), `led off` / `led auto` (kept in NVS, default `auto`),
 `led test` (each pattern for 3 s, also when off). `status` shows the LED line too.
 State machine: `firmware-esp32/components/statusled/statusled_sm.c` (host-tested).
