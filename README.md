@@ -102,8 +102,8 @@ appears only with the Flipper's Settings > System > Debug on.
 > supplies together. Remove the 3V3 wire before connecting USB-C (for example to flash the
 > firmware). Leave "5V on GPIO" off on the Flipper.
 
-Pin details: [Hardware and Wiring](docs/HARDWARE.md). The SSH Runner add-on board plugs straight into
-the Flipper instead of the wiring: its design files are in [`hardware/`](hardware/README.md).
+Pin details: [Hardware and Wiring](docs/HARDWARE.md). A custom add-on PCB that plugs straight into
+the Flipper is coming in a later release.
 
 <table>
 <tr>
