@@ -12,10 +12,11 @@ snapshot:
 
 before:
   hooks:
-    # archives take files from this folder only: the repository's license, copied (git-ignored)
-    - cp ../LICENSE LICENSE
-    # every linked module's license (MIT / BSD notices travel with the binary)
-    - bash scripts/licenses.sh
+    # archives take files from this folder only, and GoReleaser does not fill in their contents:
+    # the archive's README.md (with the version), LICENSE and licenses/THIRD_PARTY_NOTICES.txt
+    # (every linked module's license: MIT / BSD notices travel with the binary) are written
+    # into archive/ (git-ignored)
+    - bash scripts/archive_files.sh
 
 builds:
   - id: sshrunner
@@ -37,10 +38,18 @@ archives:
       - goos: windows
         formats: [zip]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # sshrunner[.exe], README.md, LICENSE, licenses/THIRD_PARTY_NOTICES.txt
     files:
-      - README.md
-      - LICENSE
-      - third_party/*
+      - src: archive/README.md
+        strip_parent: true
+        info: { mode: 0o644 }
+      - src: archive/LICENSE
+        strip_parent: true
+        info: { mode: 0o644 }
+      - src: archive/licenses/THIRD_PARTY_NOTICES.txt
+        dst: licenses
+        strip_parent: true
+        info: { mode: 0o644 }
 
 checksum:
   disable: true

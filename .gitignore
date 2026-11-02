@@ -30,6 +30,5 @@ tools/flipper/local/
 *.swp
 Thumbs.db
 .DS_Store
-# copied by cli/.goreleaser.yaml for the archives
-/cli/LICENSE
-/cli/third_party/
+# written by cli/scripts/archive_files.sh for the release archives
+/cli/archive/
