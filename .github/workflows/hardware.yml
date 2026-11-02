@@ -1,0 +1,43 @@
+# KiCad checks for the add-on board (hardware/). Runs only when the board or this file changes,
+# in the same KiCad image as hardware/tools/kicad.sh, pinned by digest.
+name: hardware
+
+on:
+  push:
+    branches: [main]
+    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+  pull_request:
+    paths: ["hardware/**", ".github/workflows/hardware.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # kicad/kicad:10.0.7-full
+  KICAD_IMAGE: kicad/kicad@sha256:347d5b7d5d88207ba4217cdf594eeccd142279600d023e7a7e426f8599c77708
+
+jobs:
+  kicad:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Pull KiCad
+        run: docker pull "$KICAD_IMAGE"
+      - name: ERC
+        run: >-
+          hardware/tools/kicad.sh kicad-cli sch erc --severity-all --exit-code-violations
+          -o /project/.cache/hardware/erc.rpt ssh-runner.kicad_sch
+      - name: DRC with schematic parity
+        run: >-
+          hardware/tools/kicad.sh kicad-cli pcb drc --schematic-parity --severity-all --exit-code-violations
+          -o /project/.cache/hardware/drc.rpt ssh-runner.kicad_pcb
+      - name: Track angles
+        run: hardware/tools/kicad.sh python3 tools/check_angles.py
+      - name: Reports
+        if: always()
+        run: cat .cache/hardware/erc.rpt .cache/hardware/drc.rpt 2>/dev/null || true

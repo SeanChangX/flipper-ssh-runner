@@ -1,0 +1,32 @@
+(version 1)
+# JLCPCB 4-layer capabilities (jlcpcb.com/capabilities/pcb-capabilities, read 2026-10-24),
+# with margin: the design uses at least these values, JLC's minimum is in each comment.
+
+(rule "track width"
+	(constraint track_width (min 0.15mm)))            # JLC 0.09 mm (4-layer, 1 oz)
+
+(rule "copper clearance"
+	(constraint clearance (min 0.15mm)))              # JLC 0.09 mm
+
+(rule "via size"
+	(condition "A.Type == 'Via'")
+	(constraint via_diameter (min 0.5mm)))            # JLC free tier: 0.3 mm hole, 0.4/0.45 mm pad
+
+(rule "minimum drill"
+	(constraint hole_size (min 0.3mm)))               # every hole, vias and pads: JLC's free 0.3 mm tier
+	                                                  # (a 0.2 mm hole costs extra and forces via testing
+	                                                  # and TG155, CAM.md)
+
+(rule "annular ring"
+	(constraint annular_width (min 0.1mm)))           # 0.5/0.3 mm vias; JLC 0.3 mm hole with 0.4 mm pad
+
+(rule "hole to hole"
+	(constraint hole_to_hole (min 0.5mm)))            # JLC 0.5 mm (different nets)
+
+(rule "copper to board edge"
+	(constraint edge_clearance (min 0.3mm)))          # JLC 0.2 mm (routed edge)
+
+(rule "silkscreen text"
+	(layer "?.Silkscreen")
+	(constraint text_height (min 1.0mm))              # JLC 1.0 mm
+	(constraint text_thickness (min 0.15mm)))         # JLC 0.15 mm

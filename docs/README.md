@@ -11,6 +11,7 @@ SSH commands from the Flipper. Start with the Quick Start; the rest is reference
 |---|---|
 | [Quick Start](QUICKSTART.md) | Wiring, flashing the board, installing the app, the first connection, what each message means |
 | [Hardware and Wiring](HARDWARE.md) | The prototype board, pin assignments, desk and portable power, the safety rule for USB-C |
+| [Add-on Board](../hardware/README.md) | The SSH Runner add-on PCB: design files, ordering, errata, design notes and bring-up |
 
 ## Using
 
@@ -36,4 +37,4 @@ SSH commands from the Flipper. Start with the Quick Start; the rest is reference
 | [Releasing](RELEASING.md) | Cutting a release, its files, verifying them, the Flipper Apps Catalog |
 | [Hardware-in-the-Loop Tests](../tools/hil/README.md) | Test scripts that drive the board from a computer |
 | [Third-Party Components](../THIRD_PARTY.md) | Bundled and linked components and their licenses |
-| [License](../LICENSE) | GPL-3.0-only |
+| [License](../LICENSE) | GPL-3.0-only; the add-on board's design is [CERN-OHL-S-2.0](../hardware/LICENSE) |

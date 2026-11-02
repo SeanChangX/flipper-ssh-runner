@@ -102,8 +102,8 @@ appears only with the Flipper's Settings > System > Debug on.
 > supplies together. Remove the 3V3 wire before connecting USB-C (for example to flash the
 > firmware). Leave "5V on GPIO" off on the Flipper.
 
-Pin details: [Hardware and Wiring](docs/HARDWARE.md). A custom add-on PCB that plugs straight into
-the Flipper is coming in a later release.
+Pin details: [Hardware and Wiring](docs/HARDWARE.md). The SSH Runner add-on board plugs straight into
+the Flipper instead of the wiring: its design files are in [`hardware/`](hardware/README.md).
 
 <table>
 <tr>
@@ -112,8 +112,8 @@ the Flipper is coming in a later release.
 </tr>
 </table>
 
-<p align="center">SSH Runner rev 0.1, the custom add-on PCB: bring-up in progress; design files
-will be published with v0.3.0.</p>
+<p align="center">SSH Runner rev 0.1, the custom add-on PCB: <a href="hardware/README.md">design files,
+how to order, and errata</a>.</p>
 
 ## Installation
 
@@ -227,8 +227,9 @@ a bug, run the checks and send a change.
 
 ## License
 
-[GPL-3.0-only](LICENSE). Third-party components and their licenses:
-[THIRD_PARTY.md](THIRD_PARTY.md).
+[GPL-3.0-only](LICENSE). The add-on board's hardware design is
+[CERN-OHL-S-2.0](hardware/LICENSE) ([`hardware/`](hardware/README.md#license)). Third-party components
+and their licenses: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Acknowledgments
 

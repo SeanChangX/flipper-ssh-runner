@@ -1,0 +1,12 @@
+# KiCad per-user, backup and lock files (outputs go to .cache/hardware/)
+*.kicad_prl
+*.kicad-save-*
+*-backups/
+fp-info-cache
+*.lck
+~*.lck
+\#auto_saved_files#
+# 3D models fetched by tools/lcsc_3d.py (not redistributed, see README.md)
+/3d/
+# Flipper Devices reference files, fetched per ref/README.md (not redistributed)
+/ref/flipper-3d-models/
