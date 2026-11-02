@@ -134,14 +134,14 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 ### ESP32 Firmware
 
 Download the zip for your board, `flipper-ssh-runner-esp32-waveshare-v<version>.zip` (Waveshare
-ESP32-S3-ETH) or `flipper-ssh-runner-esp32-rev0.1-v<version>.zip` (SSH Runner rev 0.1), unzip
-it and connect the board's USB-C (3V3 wire removed). On a first install, erase the flash and
-write the factory image (`-factory.bin`) at `0x0`; on an update, write only the app image
-(`-app.bin`) at `0x20000`, without erasing, which keeps the board's saved WiFi network and
+ESP32-S3-ETH) or `flipper-ssh-runner-esp32-addon-v<version>.zip` (SSH Runner add-on, rev 0.1 and
+later), unzip it and connect the board's USB-C (3V3 wire removed). On a first install, erase the
+flash and write the factory image (`-factory.bin`) at `0x0`; on an update, write only the app
+image (`-app.bin`) at `0x20000`, without erasing, which keeps the board's saved WiFi network and
 trusted host keys. The simplest way is in the browser, with Spacehuhn's
 [ESPTool](https://esptool.spacehuhn.com/) in desktop Chrome or Edge, step by step in the
 [Quick Start](docs/QUICKSTART.md#in-the-browser-recommended). Or with
-[esptool](https://github.com/espressif/esptool) (`<board>` is `waveshare` or `rev0.1`):
+[esptool](https://github.com/espressif/esptool) (`<board>` is `waveshare` or `addon`):
 
 ```sh
 # first install

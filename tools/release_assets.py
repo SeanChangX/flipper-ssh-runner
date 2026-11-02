@@ -2,7 +2,7 @@
 
     python tools/release_assets.py check X.Y.Z
     python tools/release_assets.py assets X.Y.Z OUT --fap-official F --fap-unleashed F \
-        --esp32 DIR --esp32-rev0-1 DIR --cli-dist DIR
+        --esp32 DIR --esp32-addon DIR --cli-dist DIR
     python tools/release_assets.py notes X.Y.Z > notes.md
 
 check: the version is the same in CHANGELOG.md, the firmware and the Flipper app.
@@ -10,13 +10,13 @@ check: the version is the same in CHANGELOG.md, the firmware and the Flipper app
 assets: writes to OUT the files a release carries, and nothing else:
   ssh_runner-official.fap, ssh_runner-unleashed.fap
   flipper-ssh-runner-esp32-waveshare-vX.Y.Z.zip  the firmware for the Waveshare ESP32-S3-ETH
-  flipper-ssh-runner-esp32-rev0.1-vX.Y.Z.zip     the firmware for the SSH Runner rev 0.1 board
+  flipper-ssh-runner-esp32-addon-vX.Y.Z.zip      the firmware for the SSH Runner add-on board
                                               each: README.txt, the factory image (from 0x0, for
                                               a first install), the app image (at 0x20000, for
                                               updates) and licenses/
   sshrunner_X.Y.Z_*                           the PC tool's archives and packages (GoReleaser)
   SHA256SUMS                                  the checksums of all of the above
---esp32 and --esp32-rev0-1 are firmware build folders, one per board: flipper_eth_ssh.bin,
+--esp32 and --esp32-addon are firmware build folders, one per board: flipper_eth_ssh.bin,
 flash_args and sdkconfig from the build, factory.bin (`esptool.py merge_bin @flash_args`), and
 LICENSE.esp-idf, LICENSE.lwip, LICENSE.freertos and LICENSE.mbedtls from the ESP-IDF it was
 built with. A build that would burn eFuses, or one for the other board, is refused.
@@ -69,7 +69,7 @@ class Board:
 
 BOARDS = (
     Board("esp32", "waveshare", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH"),
-    Board("esp32_rev0_1", "rev0.1", "SSH Runner rev 0.1 board", "CONFIG_FES_BOARD_SSH_RUNNER_REV0_1"),
+    Board("esp32_addon", "addon", "SSH Runner add-on board, rev 0.1 and later", "CONFIG_FES_BOARD_SSH_RUNNER_ADDON"),
 )
 
 FLASH_README = """SSH Runner v{ver}: ESP32-S3 firmware for the {board}
@@ -100,7 +100,7 @@ INSTALL = """## Install
 
 **Flipper app.** Download `ssh_runner-official.fap`: it runs on the official firmware and on Unleashed. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader and open it from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only. If the Flipper reports an API mismatch or an outdated app after a firmware update, download the latest release.
 
-**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-rev0.1-v{ver}.zip` for the SSH Runner rev 0.1 board. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
+**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-addon-v{ver}.zip` for the SSH Runner add-on board, rev 0.1 and later. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
 
 **sshrunner, the PC tool** (optional): the archive for your system (`sshrunner_{ver}_<os>_<arch>`), or the `.deb` / `.rpm` on Linux. It edits the hosts, commands, keys and scripts on the Flipper over USB, with a backup first: [PC Tool]({doc}cli/README.md).
 
@@ -312,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("assets")
     s.add_argument("version")
     s.add_argument("out")
-    for opt in ("--fap-official", "--fap-unleashed", "--esp32", "--esp32-rev0-1", "--cli-dist"):
+    for opt in ("--fap-official", "--fap-unleashed", "--esp32", "--esp32-addon", "--cli-dist"):
         s.add_argument(opt, required=True)
     a = ap.parse_args(argv)
     if not re.fullmatch(r"\d+\.\d+\.\d+", a.version):

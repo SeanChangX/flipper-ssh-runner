@@ -38,9 +38,9 @@ Download the firmware zip for your board from the release and unzip it:
 | Board | Zip |
 |---|---|
 | Waveshare ESP32-S3-ETH | `flipper-ssh-runner-esp32-waveshare-v<version>.zip` |
-| SSH Runner rev 0.1 | `flipper-ssh-runner-esp32-rev0.1-v<version>.zip` |
+| SSH Runner add-on, rev 0.1 and later | `flipper-ssh-runner-esp32-addon-v<version>.zip` |
 
-It holds two images, named for the board (`<board>` below is `waveshare` or `rev0.1`); you
+It holds two images, named for the board (`<board>` below is `waveshare` or `addon`); you
 flash one:
 
 - **First install** (a new board, or one that ran other firmware): erase the flash, then write

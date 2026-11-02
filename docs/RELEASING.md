@@ -44,12 +44,12 @@ the `sshrunner` PC tool; GitHub Actions builds and publishes the files from the 
 |---|---|
 | `ssh_runner-official.fap`, `ssh_runner-unleashed.fap` | the Flipper app: the official build runs on both firmwares, the Unleashed build is optional |
 | `flipper-ssh-runner-esp32-waveshare-vX.Y.Z.zip` | the firmware for the Waveshare ESP32-S3-ETH |
-| `flipper-ssh-runner-esp32-rev0.1-vX.Y.Z.zip` | the firmware for the SSH Runner rev 0.1 board |
+| `flipper-ssh-runner-esp32-addon-vX.Y.Z.zip` | the firmware for the SSH Runner add-on board, rev 0.1 and later |
 | `sshrunner_X.Y.Z_<os>_<arch>.tar.gz` / `.zip` | the PC tool for Linux, macOS (`.tar.gz`) and Windows (`.zip`), amd64 and arm64 |
 | `sshrunner_X.Y.Z_<arch>.deb` / `.rpm` | the PC tool as Linux packages (`/usr/bin/sshrunner`) |
 | `SHA256SUMS` | the one checksum file, over every file above |
 
-Each firmware zip holds (`<board>` is `waveshare` or `rev0.1`):
+Each firmware zip holds (`<board>` is `waveshare` or `addon`):
 
 ```text
 README.txt                                     which image to flash when, with the commands

@@ -1,0 +1,4 @@
+# SSH Runner add-on (the custom board, rev 0.1 and later): the board choice in Kconfig, which sets the status
+# LED (D201, green, on GPIO21, active high). Everything else is as in sdkconfig.defaults.
+# Build: idf.py -B .cache/build/esp32-addon -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.addon" build
+CONFIG_FES_BOARD_SSH_RUNNER_ADDON=y

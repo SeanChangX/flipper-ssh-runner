@@ -8,10 +8,10 @@
     !(CONFIG_FES_STATUS_LED_WS2812 && CONFIG_FES_STATUS_LED_GPIO == 21)
 #error "Waveshare ESP32-S3-ETH: the status LED is the WS2812 on GPIO21"
 #endif
-#if CONFIG_FES_STATUS_LED && CONFIG_FES_BOARD_SSH_RUNNER_REV0_1 &&          \
+#if CONFIG_FES_STATUS_LED && CONFIG_FES_BOARD_SSH_RUNNER_ADDON &&           \
     !(CONFIG_FES_STATUS_LED_GPIO_PIN && CONFIG_FES_STATUS_LED_GPIO == 21 && \
       !CONFIG_FES_STATUS_LED_ACTIVE_LOW)
-#error "SSH Runner rev 0.1: the status LED is D201 on GPIO21, active high"
+#error "SSH Runner add-on: the status LED is D201 on GPIO21, active high"
 #endif
 
 #if CONFIG_FES_STATUS_LED_WS2812
@@ -42,7 +42,7 @@ static esp_err_t ws_init(void) {
 }
 
 static void ws_set(bool on) {
-    /* red only, dim: one plain light, like rev 0.1's single LED */
+    /* red only, dim: one plain light, like the add-on board's single LED */
     uint8_t grb[3] = {0, on ? CONFIG_FES_STATUS_LED_LEVEL : 0, 0};
     rmt_transmit_config_t tx = {.loop_count = 0};
     if(rmt_transmit(ws_chan, ws_enc, grb, sizeof(grb), &tx) == ESP_OK)

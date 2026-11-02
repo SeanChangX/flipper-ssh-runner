@@ -82,8 +82,8 @@ jobs:
         include:
           - board: esp32 # Waveshare ESP32-S3-ETH, the default
             defaults: sdkconfig.defaults
-          - board: esp32-rev0_1 # SSH Runner rev 0.1
-            defaults: sdkconfig.defaults;sdkconfig.rev0_1
+          - board: esp32-addon # SSH Runner add-on, rev 0.1 and later
+            defaults: sdkconfig.defaults;sdkconfig.addon
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # built from scratch: the dev firmware, no eFuse-burning option (release_assets.py checks)
@@ -165,7 +165,7 @@ jobs:
           python tools/release_assets.py assets "$VERSION" release \
             --fap-official build/fap-OFFICIAL/ssh_runner.fap \
             --fap-unleashed build/fap-UNLEASHED/ssh_runner.fap \
-            --esp32 build/esp32 --esp32-rev0-1 build/esp32-rev0_1 --cli-dist build/cli
+            --esp32 build/esp32 --esp32-addon build/esp32-addon --cli-dist build/cli
           python tools/release_assets.py notes "$VERSION" > notes.md
           cat release/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
