@@ -5,7 +5,7 @@ import zlib
 
 import pytest
 
-from tools.flipper import kbd, rpc, screen, session, walks
+from tools.flipper import kbd, rpc, screen, session, ui, walks
 
 
 class FakeTransport(rpc.Transport):
@@ -197,6 +197,9 @@ class _GuardRpc:
     def input(self, key, long=False):
         self.keys.append(key)
 
+    def screenshot(self):
+        return bytes(1024)  # a blank screen: not the Security screen
+
 
 def test_walker_stops_sending_keys_when_the_app_ends(tmp_path):
     """If SSH Runner ends mid-walk, typed keys land in another app (Sub-GHz, say). After an
@@ -313,3 +316,179 @@ def test_contains_secret():
     assert not walks.contains_secret(b"User: tester\nHost: 192.168.2.10\n", "test")
     assert walks.contains_secret(b"Password: test\n", "test")
     assert walks.contains_secret(b"x=test", "test")
+
+
+# ---------------------------------------------------------------------------
+# finding menu items by their pixels (ui.py) instead of counting presses
+
+
+def _shot(name):
+    return screen.from_png((ui.SHOTS / name).read_bytes())
+
+
+@pytest.mark.parametrize("name", sorted(ui.REFS))
+def test_templates_match_the_committed_screenshots(name):
+    # the constants are what the committed screenshots give (regenerate: python -m tools.flipper.ui)
+    assert ui.template(name) == ui.cut_ref(name)
+    assert set(ui.TEMPLATES) == set(ui.REFS)
+
+
+@pytest.mark.parametrize("name", sorted(ui.REFS))
+def test_every_label_is_found_in_its_own_screenshot(name):
+    png, (x0, y0, x1, y1) = ui.REFS[name]
+    hit = ui.find_px(_shot(png), ui.template(name))
+    assert hit and x0 <= hit.x <= x1 and y0 <= hit.y <= y1
+
+
+def test_labels_and_selection_on_real_frames():
+    px = _shot("02-settings.png")  # About (selected), Developer, Security
+    assert ui.find_px(px, ui.template("About")).selected
+    assert not ui.find_px(px, ui.template("Developer")).selected
+    assert not ui.find_px(px, ui.template("Security")).selected
+    assert ui.find_px(px, ui.template("Restore Examples")) is None
+    px = _shot("x01-settings-restore-examples.png")
+    assert ui.find_px(px, ui.template("Restore Examples")).selected
+    assert ui.find_px(px, ui.template("About")) is None
+    # Home's "Settings" item is not the Settings screen's bold header
+    assert ui.find_px(_shot("02-settings.png"), ui.template("Settings")) is None
+
+
+def _frame(px):
+    """Pixels back to an RPC screen frame (8 pages of 128 bytes, LSB on top)."""
+    out = bytearray(1024)
+    for y in range(64):
+        for x in range(128):
+            if px[y][x]:
+                out[(y // 8) * 128 + x] |= 1 << (y % 8)
+    return bytes(out)
+
+
+def test_on_security_only_on_the_security_screen():
+    for png in ("s01-security-plain.png", "s09-security-protected.png"):
+        assert ui.on_security(_frame(_shot(png)))
+    for png in ("02-settings.png", "x01-settings-restore-examples.png", "s02-protect-confirm.png",
+                "52b-home-quick-connect.png", "03-about.png"):
+        assert not ui.on_security(_frame(_shot(png)))
+
+
+class _MenuRpc:
+    """A Settings-like submenu drawn from the real label templates: a header band, three
+    16-row items, the selected one inverted; Up/Down move and wrap like the stock submenu."""
+
+    def __init__(self, items, cursor=0):
+        self.items, self.cursor, self.keys = items, cursor, []
+
+    def app_locked(self):
+        return True
+
+    def input(self, key, long=False):
+        self.keys.append(key)
+        if key == "down":
+            self.cursor = (self.cursor + 1) % len(self.items)
+        elif key == "up":
+            self.cursor = (self.cursor - 1) % len(self.items)
+
+    def screenshot(self):
+        px = [[0] * 128 for _ in range(64)]
+        top = min(max(self.cursor - 1, 0), max(len(self.items) - 3, 0))
+        for row, i in enumerate(range(top, min(top + 3, len(self.items)))):
+            y0 = 16 * (row + 1)
+            sel = i == self.cursor
+            if sel:
+                for y in range(y0 + 1, y0 + 15):
+                    for x in range(1, 122):
+                        px[y][x] = 1
+            t = ui.template(self.items[i])
+            for dy, bits in enumerate(t.rows):
+                for dx in range(t.width):
+                    if bits >> dx & 1:
+                        px[y0 + 5 + dy][6 + dx] = 0 if sel else 1
+        return _frame(px)
+
+
+def _menu_walker(tmp_path, rpc_):
+    w = walks.Walker(rpc_, tmp_path, log=lambda *_: None)
+    w.in_app = True
+    w.settle = lambda timeout=15.0: rpc_.screenshot()
+    return w
+
+
+def test_select_finds_items_whatever_the_debug_flag_and_cursor(tmp_path):
+    for items in (["About", "Developer", "Security", "Restore Examples"],   # Debug on
+                  ["About", "Security", "Restore Examples"]):               # Debug off
+        for cursor in range(len(items)):                                    # remembered item
+            r = _MenuRpc(items, cursor)
+            w = _menu_walker(tmp_path, r)
+            w.select("Restore Examples")
+            assert items[r.cursor] == "Restore Examples" and "ok" not in r.keys
+
+
+def test_select_skips_a_missing_developer(tmp_path):
+    r = _MenuRpc(["About", "Security", "Restore Examples"])
+    w = _menu_walker(tmp_path, r)
+    with pytest.raises(walks.WalkSkipped):
+        walks._settings_item(w, "Developer")
+    assert "ok" not in r.keys  # nothing was opened on the way round
+
+
+class _FrozenRpc(_MenuRpc):
+    """The app is still starting: the first `deaf` Down presses change nothing."""
+
+    def __init__(self, items, deaf):
+        super().__init__(items)
+        self.deaf = deaf
+
+    def input(self, key, long=False):
+        if self.deaf:
+            self.deaf -= 1
+            self.keys.append(key)
+            return
+        super().input(key, long)
+
+
+def test_select_does_not_skip_on_a_screen_that_ignores_keys(tmp_path):
+    # a starting app ignored the first Down: not "no Settings in this menu"
+    r = _FrozenRpc(["About", "Security", "Restore Examples"], deaf=1)
+    _menu_walker(tmp_path, r).select("Restore Examples")
+    assert r.items[r.cursor] == "Restore Examples"
+    # a screen that never moves fails clearly instead of skipping the walk
+    r = _FrozenRpc(["About", "Security"], deaf=99)
+    with pytest.raises(walks.WalkFailed, match="did not move"):
+        _menu_walker(tmp_path, r).select("Restore Examples", limit=5)
+
+
+class _SecurityRpc(_GuardRpc):
+    def __init__(self):
+        super().__init__(alive=100)
+
+    def screenshot(self):
+        return _frame(_shot("s01-security-plain.png"))
+
+
+def test_walk_on_security_by_accident_sends_nothing_more(tmp_path):
+    r = _SecurityRpc()
+    w = walks.Walker(r, tmp_path, log=lambda *_: None)
+    w.in_app = True
+    for send in (lambda: w.press("right"), lambda: w.press("ok"), lambda: w.type("x")):
+        with pytest.raises(walks.SecurityReached):
+            send()
+    assert r.keys == []
+    w.allow_security = True  # w_security, on the demo build, goes there on purpose
+    w.press("back")
+    assert r.keys == ["back"]
+
+
+def test_close_app_never_presses_right_on_security():
+    r = _SecurityRpc()
+    r.app_exit = lambda: None
+    session.close_app(r)
+    assert "right" not in r.keys
+
+
+def test_run_all_reports_a_skipped_walk(monkeypatch, tmp_path):
+    def needs_debug(w):
+        raise walks.WalkSkipped("no Developer")
+
+    monkeypatch.setattr(walks, "WALKS", {"a": needs_debug})
+    res = walks.run_all(object(), tmp_path, log=lambda *_: None)
+    assert res["a"]["ok"] and res["a"]["skipped"] == "no Developer"
