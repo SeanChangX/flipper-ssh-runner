@@ -192,6 +192,20 @@ def art_layout(name=ART):
     }
 
 
+def title_block(board):
+    """The schematic sheets' title block (tools/schlib.py); it gives the Gerbers and the job file
+    their revision (TF.ProjectId, "Revision")."""
+    tb = pcbnew.TITLE_BLOCK()
+    tb.SetTitle("SSH Runner add-on for Flipper Zero")
+    tb.SetDate("2026-10-25")
+    tb.SetRevision("0.1")
+    tb.SetCompany("flipper-ssh-runner")
+    tb.SetComment(0, "SSH Runner add-on for Flipper Zero")
+    tb.SetComment(1, "License: CERN-OHL-S-2.0 (logo: all rights reserved, hardware/art/LICENSE.md)")
+    tb.SetComment(2, "Design notes: hardware/DESIGN.md")
+    board.SetTitleBlock(tb)
+
+
 def design_rules(board):
     """Board-wide minimums inside JLCPCB's 4-layer capabilities; details in ssh-runner.kicad_dru."""
     ds = board.GetDesignSettings()
@@ -240,6 +254,7 @@ def main():
     if os.path.exists(BOARD) and "--force" not in sys.argv:
         raise SystemExit("ssh-runner.kicad_pcb exists; it is the source now (use --force to regenerate)")
     board = pcbnew.BOARD()
+    title_block(board)
     design_rules(board)
     x0, y0, x1, y1 = outline(board)
     a = art_layout()
