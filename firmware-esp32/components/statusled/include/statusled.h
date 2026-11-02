@@ -25,6 +25,9 @@ typedef enum {
     STATUSLED_OFF = 1, /* dark for good (`led off`, kept in NVS) */
 } StatusLedMode;
 
+/* First thing at boot: the LED dark at once. A WS2812 keeps what a glitch on its data line
+ * latched across a reset (a red light at every restart) until it is sent a new color. */
+void statusled_init(void);
 /* After net and SSH are up: reads the mode from NVS and starts the LED task. */
 void statusled_start(void);
 esp_err_t statusled_set_mode(StatusLedMode mode);

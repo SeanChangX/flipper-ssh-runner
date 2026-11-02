@@ -40,8 +40,9 @@ static LedPattern pick(const LedSm* sm, uint32_t now, const LedInputs* in) {
     if(!before(now, sm->error_from) && before(now, sm->error_until)) return LED_PAT_ERROR;
     if(before(now, sm->boot_until)) return LED_PAT_BOOT;
     if(before(now, sm->link_up_until)) return LED_PAT_LINK_UP;
-    if(in->ssh_active) return LED_PAT_SSH;
-    if(in->joining || (in->background_linking && in->links_up == 0)) return LED_PAT_LINKING;
+    if(in->ssh_open) return LED_PAT_SSH;
+    if(in->joining || in->ssh_connecting || (in->background_linking && in->links_up == 0))
+        return LED_PAT_LINKING;
     return LED_PAT_DARK;
 }
 

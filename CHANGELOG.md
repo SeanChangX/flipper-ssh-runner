@@ -14,10 +14,10 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ### Added
 
-- A status LED on the board: one short flash at boot, a slow blink while a link comes up, on
-  for a second when it is up, a double flash while an SSH session is open, and fast flashes on
-  an error ([Hardware and Wiring](docs/HARDWARE.md#status-led)). The console's `led off` turns
-  it off.
+- A status LED on the board: one short flash at boot, a slow blink while a link or an SSH
+  session comes up, on for a second when a link is up, a double flash while an SSH session is
+  open, and fast flashes on an error ([Hardware and Wiring](docs/HARDWARE.md#status-led)). The
+  console's `led off` turns it off.
 - The firmware's board is a Kconfig choice: the Waveshare ESP32-S3-ETH (the default) or the
   custom board SSH Runner rev 0.1. It sets the status LED's type and pin.
 
