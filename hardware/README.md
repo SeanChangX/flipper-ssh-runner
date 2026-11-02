@@ -28,7 +28,7 @@ ESP32-S3-ETH's; build it with `sdkconfig.addon` for the board's status LED
 
 | | Issue | Workaround | Fixed in |
 |---|---|---|---|
-| E1 | The reverse-mount LED holes are too small for the specified LEDs (D103, D201), so they cannot be assembled | Leave them out of the assembly; hand-fit Dialight 597-6901-607F (white) and 597-6301-607F (green), which fit the holes | rev 0.2 ([`DESIGN.md`](DESIGN.md) §10) |
+| E1 | The reverse-mount LED holes are too small for the specified LEDs (D103, D201), so they cannot be assembled | Leave them out of the assembly; hand-fit Dialight 597-6901-607F (white) and 597-6301-607F (green), which fit the holes | rev 0.2 ([`DESIGN.md`](DESIGN.md) §8) |
 
 ## Ordering
 

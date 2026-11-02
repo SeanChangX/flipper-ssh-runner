@@ -17,7 +17,7 @@ in [`DESIGN.md`](DESIGN.md) (stack-up §5.1, look §5.3, routing §5.5).
 | `ssh-runner-schematic.pdf` | The schematic, all five sheets |
 
 Rev 0.1 has one known erratum: the two reverse-mount LEDs do not fit their holes (E1,
-[`DESIGN.md`](DESIGN.md) §10). Read it before ordering.
+[`DESIGN.md`](DESIGN.md) §8). Read it before ordering.
 
 ## Making the Files
 

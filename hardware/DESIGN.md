@@ -205,7 +205,7 @@ stayed mounted. So pin 9 is the main supply.
   - Each runs at about 1.3 mA through 470 Ω.
   - Footprint: KiCad's reverse-mount 1206 with its pads moved 0.15 mm outward, 0.325 mm from the
     hole (`ssh_runner:LED_1206_3216Metric_ReverseMount_Hole1.8x2.4mm_JLC`).
-  - **Rev 0.1 erratum: the holes are too small for the ordered LEDs (E1, §10).**
+  - **Rev 0.1 erratum: the holes are too small for the ordered LEDs (E1, §8).**
 
 ### 4.9 Antenna Keep-out
 
@@ -336,7 +336,7 @@ on the board.
 Both links are electrically short: the Ethernet runs are under a third of the critical length of
 100BASE-TX edges. The MDI pairs are coupled for only part of their length; with the magnetics
 inside the jack and runs this short, that is fine at 100 Mbit/s, and rev 0.2 should couple them
-end to end (§10).
+end to end (§8).
 
 **Notes by block:**
 
@@ -410,7 +410,7 @@ Checked against the manufacturers' guidance before the fabrication files were ma
   sockets; RJ45 and USB-C reachable from the top.
 - **Result:** ERC 0, DRC 0 errors and 0 unconnected, schematic parity 0, and the 45° check clean.
 
-## 10. Errata and Rev 0.2
+## 8. Errata and Rev 0.2
 
 **Rev 0.1 errata:**
 

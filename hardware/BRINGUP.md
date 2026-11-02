@@ -10,7 +10,7 @@ reasons behind each check are in [`DESIGN.md`](DESIGN.md) (section numbers below
 - Two rev 0.1 boards, assembled by JLCPCB, were brought up. The measurements below are from the
   first; the second confirmed LAN.
 - D103 (power LED) and D201 (status LED) are not fitted on either board. Their light holes are
-  too small for the ordered parts (erratum E1, `DESIGN.md` §10); they will be fitted by hand.
+  too small for the ordered parts (erratum E1, `DESIGN.md` §8); they will be fitted by hand.
 - Firmware: v0.2.1, the Waveshare ESP32-S3-ETH build. Its pin map is the same as this board's,
   so no board-specific build is needed for bring-up.
 
