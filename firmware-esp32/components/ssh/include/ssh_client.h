@@ -24,7 +24,7 @@ typedef struct {
     /* The staged key file given to ssh_client_connect() is no longer needed:
      * called exactly once per key connect, right after parsing or on failure. */
     void (*key_release)(void* ctx);
-    /* A generated or exported private key file (KEY_GEN, KEY_LEGACY_EXPORT). */
+    /* A generated private key file (KEY_GEN). */
     bool (*key_blob)(void* ctx, const uint8_t* data, size_t len);
     /* Its public key line and fingerprint (status 0), or a failure: status is a
      * ProtoReason and `line` the message. Also sent after parsing a key that came
@@ -57,8 +57,6 @@ esp_err_t ssh_client_keygen(const ProtoKeyGen* req, const SshSink* sink);
 /* Drop an unlocked key (by key id or fingerprint) from RAM, or all with NULL / "". */
 esp_err_t ssh_client_lock(const char* id);
 size_t ssh_client_unlocked_count(void);
-/* Export the v0 NVS key the same way (ESP_ERR_NOT_FOUND if there is none). */
-esp_err_t ssh_client_legacy_export(const SshSink* sink);
 esp_err_t ssh_client_exec(const char* command);
 /* `script` must stay valid until the done event; the client does not copy it. */
 esp_err_t ssh_client_script(const char* interp, const uint8_t* script, size_t len);

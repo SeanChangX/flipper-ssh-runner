@@ -12,7 +12,7 @@
  *   exec <command ...> | script <bytes> [exit_code] [sh|bash] | cancel | bye
  *   cycles <n> <command ...>
  *   keyblob begin <bytes> | keyblob hex <hex> | keyblob end [keep] | keyblob check | keyblob drop
- *   keygen ed25519|ecdsa [passphrase] | legacy create|export|delete <crc32> | forgetpp <key_id>
+ *   keygen ed25519|ecdsa [passphrase] | forgetpp <key_id>
  *   keys | keys lock [key_id] | restart
  *   hostkeys <profile> | forget <profile> | audit | stats
  *
@@ -534,33 +534,6 @@ static int cmd_keygen(int argc, char** argv) {
     return xSemaphoreTake(key_sem, pdMS_TO_TICKS(60000)) == pdTRUE ? 0 : 1;
 }
 
-static int cmd_legacy(int argc, char** argv) {
-    if(argc < 2) {
-        printf("usage: legacy create|export|delete <crc32>\n");
-        return 1;
-    }
-    if(!strcmp(argv[1], "create")) {
-        esp_err_t err = keystore_legacy_generate();
-        printf("legacy create: %s\n", esp_err_to_name(err));
-        return err == ESP_OK ? 0 : 1;
-    }
-    if(!strcmp(argv[1], "export")) {
-        xSemaphoreTake(key_sem, 0);
-        esp_err_t err = ssh_client_legacy_export(&console_sink);
-        if(err != ESP_OK) {
-            printf("legacy export: %s\n", esp_err_to_name(err));
-            return 1;
-        }
-        return xSemaphoreTake(key_sem, pdMS_TO_TICKS(30000)) == pdTRUE ? 0 : 1;
-    }
-    if(!strcmp(argv[1], "delete") && argc > 2) {
-        esp_err_t err = keystore_legacy_delete((uint32_t)strtoul(argv[2], NULL, 0));
-        printf("legacy delete: %s\n", esp_err_to_name(err));
-        return err == ESP_OK ? 0 : 1;
-    }
-    return 1;
-}
-
 static int cmd_forgetpp(int argc, char** argv) {
     if(argc < 2) return 1;
     keystore_pass_forget(argv[1]);
@@ -868,7 +841,6 @@ void console_start(void) {
     reg("keygen",
         "keygen ed25519|ecdsa [passphrase]: print a new key file and its public key",
         cmd_keygen);
-    reg("legacy", "v0 NVS key: legacy create | export | delete <crc32>", cmd_legacy);
     reg("forgetpp",
         "forget a remembered key passphrase (and its unlocked copy): forgetpp <key_id>",
         cmd_forgetpp);

@@ -1090,20 +1090,15 @@ def without_busy_sign(frame: bytes) -> bytes:
     return bytes(f)
 
 
-def _esp32_forget(w: Walker, profiles: list[str], legacy_key: bool = False) -> None:
+def _esp32_forget(w: Walker, profiles: list[str]) -> None:
     """Start from a known board: forget the trusted keys and remembered password of these
-    profiles (console `forget`), and with legacy_key give it a v0 key for the app to migrate
-    (console `legacy create`), before the app starts. The console may reset the board on
+    profiles (console `forget`) before the app starts. The console may reset the board on
     open (DTR on some hosts): wait out a boot first."""
     import os
 
     s = _esp32_console(os.environ.get("FES_ESP32_PORT", "COM8"))
     try:
         time.sleep(5.0)
-        if legacy_key:
-            out = _esp32_cmd(s, "legacy create", 3.0)
-            if "ESP_OK" not in out:
-                raise WalkFailed(f"legacy create failed: {out.strip().splitlines()[-1:]}")
         for p in profiles:
             _esp32_cmd(s, f"forget {p}", 1.0)
             if "no trusted keys" not in _esp32_cmd(s, f"hostkeys {p}", 1.0):
@@ -1432,8 +1427,9 @@ def _authorize(env: dict, pubs: str) -> None:
 
 def _walk_keys() -> dict:
     """Test keys for w_hwkeys, made fresh with ssh-keygen into .cache/hil/walk-keys
-    (git-ignored) and authorized in the --rm test sshd: an encrypted OpenSSH Ed25519 key
-    with its .pub, and an encrypted PEM RSA key without one (the ESP32 returns it)."""
+    (git-ignored) and authorized in the --rm test sshd: an unencrypted Ed25519 key (the
+    default key), an encrypted OpenSSH Ed25519 key with its .pub, and an encrypted PEM RSA
+    key without one (the ESP32 returns it)."""
     import secrets
     import shutil
     import subprocess
@@ -1443,46 +1439,50 @@ def _walk_keys() -> dict:
     d.mkdir(parents=True, exist_ok=True)
     pp = "walk-" + secrets.token_hex(4)
     exe = shutil.which("ssh-keygen")
-    keys = {"hil_ed25519": ["-t", "ed25519"], "hil_rsa_pem": ["-t", "rsa", "-b", "3072", "-m", "PEM"]}
-    for name, args in keys.items():
+    keys = {
+        "flipper": (["-t", "ed25519"], ""),
+        "hil_ed25519": (["-t", "ed25519"], pp),
+        "hil_rsa_pem": (["-t", "rsa", "-b", "3072", "-m", "PEM"], pp),
+    }
+    for name, (args, passphrase) in keys.items():
         for f in (d / name, d / (name + ".pub")):
             f.unlink(missing_ok=True)
-        subprocess.run([exe, "-q", *args, "-N", pp, "-C", name, "-f", str(d / name)], check=True)
+        subprocess.run([exe, "-q", *args, "-N", passphrase, "-C", name, "-f", str(d / name)], check=True)
     pubs = "\n".join((d / (n + ".pub")).read_text().strip() for n in keys) + "\n"
     _authorize(env, pubs)
     return {"dir": d, "pp": pp, "names": list(keys)}
 
 
+def _set_default_key(w: Walker, name: str) -> None:
+    """settings.conf as it is, with `name` as the default key."""
+    old = w.r.read(SETTINGS) if w.r.stat(SETTINGS) else b"Filetype: SSH Runner Settings\nVersion: 1\n"
+    lines = [l for l in old.splitlines(keepends=True) if not l.startswith(b"DefaultKey:")]
+    body = b"".join(lines)
+    if body and not body.endswith(b"\n"):
+        body += b"\n"
+    w.r.write(SETTINGS, body + f"DefaultKey: {name}\n".encode())
+
+
 def w_hwkeys(w: Walker) -> None:
-    """SSH keys on the real board and the test sshd (local.env). Copies two test keys into
-    keys/ (the SD card is restored afterwards). The first launch with this firmware moves
-    the board's v0 key to keys/flipper (migration) and makes it the default. Then: Quick
-    Connect on the default key (no password), a host on an encrypted key (passphrase once,
-    then remembered), a PEM key without .pub (the ESP32 returns it and the app writes it),
-    and a key generated on the board. Screens show real addresses: kept out of git."""
+    """SSH keys on the real board and the test sshd (local.env). Copies three test keys into
+    keys/ (the SD card is restored afterwards); the unencrypted one, keys/flipper, is the
+    default key. Then: Quick Connect on the default key (no password), a host on an
+    encrypted key (passphrase once, then remembered), a PEM key without .pub (the ESP32
+    returns it and the app writes it), and a key generated on the board. Screens show real addresses: kept out of git."""
     env = _local_env()
     target = f"{env['SSH_TARGET_USER']}@{env['SSH_TARGET_HOST']}:{env['SSH_TARGET_PORT']}"
-    # a v0 key on the board: the app migrates it to keys/flipper, the default key (the SD
-    # card's restore takes that away again after the walk, and the migration the board's copy)
-    _esp32_forget(w, [f"{env['SSH_TARGET_HOST']}:{env['SSH_TARGET_PORT']}", "lab"], legacy_key=True)
+    _esp32_forget(w, [f"{env['SSH_TARGET_HOST']}:{env['SSH_TARGET_PORT']}", "lab"])
     k = _walk_keys()
     keys_dir = "/ext/apps_data/ssh_runner/keys"
     if not w.r.stat("/ext/apps_data/ssh_runner"):
         w.r.mkdir("/ext/apps_data/ssh_runner")
     if not w.r.stat(keys_dir):
         w.r.mkdir(keys_dir)
-    w.r.write(f"{keys_dir}/hil_ed25519", (k["dir"] / "hil_ed25519").read_bytes())
-    w.r.write(f"{keys_dir}/hil_ed25519.pub", (k["dir"] / "hil_ed25519.pub").read_bytes())
-    w.r.write(f"{keys_dir}/hil_rsa_pem", (k["dir"] / "hil_rsa_pem").read_bytes())
+    for name in ("flipper", "flipper.pub", "hil_ed25519", "hil_ed25519.pub", "hil_rsa_pem"):
+        w.r.write(f"{keys_dir}/{name}", (k["dir"] / name).read_bytes())
+    _set_default_key(w, "flipper")  # Quick Connect's key; the test sshd knows it
     w.launch()
-    w.wait(8.0)  # HELLO, network status, and the migration of the v0 key
-    migrated = bool(w.r.stat(f"{keys_dir}/flipper"))
-    w.log(f"  v0 key migrated to keys/flipper: {migrated}")
-    if not w.r.stat(f"{keys_dir}/flipper.pub"):
-        raise WalkFailed("no default key: keys/flipper.pub missing after the migration")
-    # the default key from now on: the test sshd must know it for Quick Connect
-    pub = w.r.read(f"{keys_dir}/flipper.pub").decode().strip()
-    _authorize(_local_env(), pub + "\n")
+    w.wait(8.0)  # HELLO and network status
     w.press("down", 4)  # Keys
     w.press("ok")
     w.wait(0.6)
@@ -1490,7 +1490,7 @@ def w_hwkeys(w: Walker) -> None:
     w.press("down")  # flipper (Generate key, flipper, hil_ed25519, hil_rsa_pem)
     w.press("ok")
     w.wait(0.4)
-    w.shot("hk02-key-card-migrated")
+    w.shot("hk02-key-card-default")
     w.press("back", 2)  # list, Home
     # Quick Connect uses the default key: no password at all
     w.press("up", 4)
@@ -1586,8 +1586,6 @@ def w_hwkeys(w: Walker) -> None:
     w.wait(4.0)
     w.shot("hk14-key-card-generated")
     w.exit_app()
-    if not migrated:
-        raise WalkFailed("the v0 key was not migrated to keys/flipper")
     if not wrote_pub:
         raise WalkFailed("keys/hil_rsa_pem.pub was not written")
 
