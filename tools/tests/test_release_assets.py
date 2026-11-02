@@ -90,6 +90,7 @@ def test_a_firmware_zip_per_board(tmp_path, board, zip_name, image):
     assert f"write_flash 0x0 {image}-factory.bin" in readme and f"write_flash 0x20000 {image}-app.bin" in readme
     assert "erases the board's saved WiFi" in readme and "first install only" in readme
     assert "flash_args" not in readme and "development image" not in readme
+    assert board.usb in readme and ("3V3 wire" in readme) == (board.tag == "waveshare")
     # links absolute and pinned to the tag
     assert f"{ra.REPO}/blob/v{VER}/docs/QUICKSTART.md" in readme
     assert "](" not in readme
@@ -161,4 +162,5 @@ def test_notes_install_a_factory_image_first_and_the_app_on_updates():
     assert f"`flipper-ssh-runner-esp32-addon-v{VER}.zip`" in notes
     assert "On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`." in notes
     assert "On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing" in notes
-    assert "flash_args" not in notes and "three parts" not in notes
+    install = notes[notes.index("## Install"):]  # the changes above may name the old layout
+    assert "flash_args" not in install and "three parts" not in install

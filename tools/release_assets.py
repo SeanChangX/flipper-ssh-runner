@@ -65,11 +65,14 @@ class Board:
     tag: str  # in the file names
     name: str
     kconfig: str  # the board's option in the Kconfig choice FES_BOARD
+    usb: str  # what to mind about its USB-C (README.txt)
 
 
 BOARDS = (
-    Board("esp32", "waveshare", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH"),
-    Board("esp32_addon", "addon", "SSH Runner add-on board, rev 0.1 and later", "CONFIG_FES_BOARD_SSH_RUNNER_ADDON"),
+    Board("esp32", "waveshare", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH",
+          "Remove the Flipper's 3V3 wire before you plug in the board's USB-C."),
+    Board("esp32_addon", "addon", "SSH Runner add-on board, rev 0.1 and later", "CONFIG_FES_BOARD_SSH_RUNNER_ADDON",
+          "The board's USB-C may stay plugged in while it sits on the Flipper."),
 )
 
 FLASH_README = """SSH Runner v{ver}: ESP32-S3 firmware for the {board}
@@ -91,16 +94,16 @@ With esptool (pip install esptool), from this folder; <port> is e.g. COM5, /dev/
                     esptool.py --chip esp32s3 -p <port> write_flash 0x0 {factory}
     update:         esptool.py --chip esp32s3 -p <port> write_flash 0x20000 {app}
 
-Remove the Flipper's 3V3 wire before you plug in the board's USB-C. The image burns no eFuses.
+{usb} The image burns no eFuses.
 Step by step: {doc}docs/QUICKSTART.md#2-flash-the-esp32
-Wiring: {doc}docs/HARDWARE.md   Licenses: licenses/
+Hardware: {doc}docs/HARDWARE.md   Licenses: licenses/
 """
 
 INSTALL = """## Install
 
 **Flipper app.** Download `ssh_runner-official.fap`: it runs on the official firmware and on Unleashed. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader and open it from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only. If the Flipper reports an API mismatch or an outdated app after a firmware update, download the latest release.
 
-**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-addon-v{ver}.zip` for the SSH Runner add-on board, rev 0.1 and later. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
+**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-addon-v{ver}.zip` for the SSH Runner add-on board, rev 0.1 and later. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). On the Waveshare board, remove the 3V3 wire before connecting its USB-C.
 
 **sshrunner, the PC tool** (optional): the archive for your system (`sshrunner_{ver}_<os>_<arch>`), or the `.deb` / `.rpm` on Linux. It edits the hosts, commands, keys and scripts on the Flipper over USB, with a backup first: [PC Tool]({doc}cli/README.md).
 
@@ -267,7 +270,8 @@ def firmware_zip(ver: str, out: Path, esp: Path, board: Board) -> None:
     factory, app = f"{stem}-factory.bin", f"{stem}-app.bin"
     zip_name = f"flipper-ssh-runner-esp32-{board.tag}-v{ver}"
     base = f"{zip_name}/"
-    readme = FLASH_README.format(ver=ver, board=board.name, factory=factory, app=app, doc=f"{REPO}/blob/v{ver}/")
+    readme = FLASH_README.format(
+        ver=ver, board=board.name, usb=board.usb, factory=factory, app=app, doc=f"{REPO}/blob/v{ver}/")
     with zipfile.ZipFile(out / f"{zip_name}.zip", "w") as z:
         zip_add(z, base + "README.txt", readme.encode())
         zip_add(z, base + factory, (esp / FACTORY).read_bytes())
