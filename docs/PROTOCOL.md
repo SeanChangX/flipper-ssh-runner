@@ -274,8 +274,6 @@ side logs it.
 | 0x46 | `KEY_PASSPHRASE` | F→E | `passphrase:str, remember:u8` | `ACK` / `ERROR(state)` |
 | 0x47 | `KEY_PUB_EVT` | E→F | `status:u8, fp:str, total:u16, offset:u16, data` | `ACK` |
 | 0x40 | `KEY_GEN` | F→E | `key_type:u8` (0 = Ed25519, 1 = ECDSA P-256), `passphrase:str` | `ACK`, then blob + `KEY_PUB_EVT` |
-| 0x48 | `KEY_LEGACY_EXPORT` (reserved) | F→E | any (ignored) | `ERROR(not found)` |
-| 0x49 | `KEY_LEGACY_DELETE` (reserved) | F→E | any (ignored) | `ERROR(not found)` |
 | 0x42 | `SECRET_FORGET` | F→E | `kind:u8, id:str` | `ACK` |
 
 - **Staging** (F→E `KEY_BLOB_*` right before `SSH_CONNECT` with auth = 1): E keeps the
@@ -297,11 +295,7 @@ side logs it.
   until kind 1/2 above or a restart): a later connect with that key needs no passphrase and
   skips the KDF.
 - `0x41 KEY_GET_PUB` and `0xC1 KEY_PUB_RESP` (v0) are gone; `0x41` is unassigned.
-- `0x48` and `0x49` exported and deleted a device key that pre-release firmware kept in E's
-  NVS; no released firmware has one. Both numbers are reserved and never reused. Apps from
-  before their removal still send `KEY_LEGACY_EXPORT` once per run and read `ERROR(not found)`
-  as "nothing to move", so E keeps answering both with `ERROR(not found)`, whatever the
-  payload; current apps send neither.
+- `0x48`, `0x49`: retired, never reuse (they were `KEY_LEGACY_EXPORT` and `KEY_LEGACY_DELETE`).
 
 ### Security
 

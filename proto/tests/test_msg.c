@@ -361,9 +361,8 @@ static void test_keys(void) {
 
     TT_EQ_STR(proto_type_name(PROTO_T_KEY_BLOB_CHUNK), "KEY_BLOB_CHUNK");
     TT_EQ_STR(proto_type_name(0x41), "?"); /* KEY_GET_PUB is gone */
-    /* the two pre-release legacy-key requests stay named in logs: their numbers are reserved */
-    TT_EQ_STR(proto_type_name(0x48), "KEY_LEGACY_EXPORT (obsolete)");
-    TT_EQ_STR(proto_type_name(0x49), "KEY_LEGACY_DELETE (obsolete)");
+    TT_EQ_STR(proto_type_name(0x48), "?"); /* retired, never reused */
+    TT_EQ_STR(proto_type_name(0x49), "?");
 }
 
 static void test_misc_codecs_rest(void) {

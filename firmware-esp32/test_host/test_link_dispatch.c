@@ -57,20 +57,11 @@ static void test_decode_requests(void) {
     n = proto_enc_secret_forget(&f, buf, sizeof(buf));
     TT_EQ_INT(link_decode_request(PROTO_T_SECRET_FORGET, buf, n, &r), ProtoErrNone);
     TT_EQ_INT(r.forget.kind, ProtoForgetPassphrase);
-    TT_CHECK(!link_request_obsolete(PROTO_T_SECRET_FORGET));
-    /* The reserved KEY_LEGACY_* requests of older apps decode with any payload and are
-     * answered as obsolete (ERROR not found) */
-    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_EXPORT_RESERVED, NULL, 0, &r), ProtoErrNone);
-    TT_CHECK(link_request_obsolete(r.type));
+    /* 0x48/0x49 (retired KEY_LEGACY_*): unknown types. Older apps still send 0x48 once per
+     * run; the ERROR(unknown type) reply names it, and they take any error as "nothing to move" */
+    TT_EQ_INT(link_decode_request(0x48, NULL, 0, &r), ProtoErrUnknownType);
     static const uint8_t crc[] = {0x26, 0x39, 0xF4, 0xCB}; /* the CRC payload old apps send */
-    TT_EQ_INT(
-        link_decode_request(PROTO_T_KEY_LEGACY_DELETE_RESERVED, crc, sizeof(crc), &r),
-        ProtoErrNone);
-    TT_CHECK(link_request_obsolete(r.type));
-    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_DELETE_RESERVED, NULL, 0, &r), ProtoErrNone);
-    TT_CHECK(link_request_obsolete(r.type));
-    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_EXPORT_RESERVED, crc, 1, &r), ProtoErrNone);
-    TT_CHECK(link_request_obsolete(r.type));
+    TT_EQ_INT(link_decode_request(0x49, crc, sizeof(crc), &r), ProtoErrUnknownType);
     ProtoKeyBlobBegin kb = {.total = PROTO_KEY_MAX + 1};
     n = proto_enc_key_blob_begin(&kb, buf, sizeof(buf));
     TT_EQ_INT(link_decode_request(PROTO_T_KEY_BLOB_BEGIN, buf, n, &r), ProtoErrBadPayload);

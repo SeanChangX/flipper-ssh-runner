@@ -60,11 +60,7 @@ typedef enum {
     PROTO_T_KEY_BLOB_END = 0x45, /* same directions, payload like SCRIPT_END */
     PROTO_T_KEY_PASSPHRASE = 0x46, /* F->E req, reply ACK; answers state passphrase_wait */
     PROTO_T_KEY_PUB_EVT = 0x47, /* E->F evt: public key line and fingerprint, chunked */
-    /* 0x48 was KEY_LEGACY_EXPORT and 0x49 KEY_LEGACY_DELETE (pre-release); reserved, never
-     * reused. Apps from before their removal still send them: the ESP32 answers both with
-     * ERROR not found, whatever the payload. */
-    PROTO_T_KEY_LEGACY_EXPORT_RESERVED = 0x48,
-    PROTO_T_KEY_LEGACY_DELETE_RESERVED = 0x49,
+    /* 0x48 (was KEY_LEGACY_EXPORT) and 0x49 (was KEY_LEGACY_DELETE): retired, never reuse */
 
     /* Security: the eFuse opt-in */
     PROTO_T_SEC_GET_STATUS = 0x60, /* F->E req, reply SEC_STATUS */

@@ -37,7 +37,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / ".cache" / "build" / "esp32"
 EFUSE_TEST_BUILD = ROOT / ".cache" / "build" / "esp32-efusetest"
-PARTITIONS = ROOT / "firmware-esp32" / "partitions.csv"
+PARTITIONS = ROOT / "firmware-esp32" / "partitions_efusetest.csv"
 TEST_PARTS = ("fes_sec", "nvs_test", "efuse_em")
 
 FLIPPER_VID_PID = (0x0483, 0x5740)
@@ -101,11 +101,15 @@ def efuse_test_problems(build: Path) -> list[str]:
     problems = [f"{k} is not set" for k in ("CONFIG_EFUSE_VIRTUAL", "CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH")
                 if v.get(k) != "y"]
     problems += [f"{k}=y" for k in EFUSE_BURNING if v.get(k) == "y"]
+    # its keystore and emulated eFuses need their partitions; a build dir made before
+    # sdkconfig.efusetest named its table keeps the production one
+    if v.get("CONFIG_PARTITION_TABLE_CUSTOM_FILENAME") != f'"{PARTITIONS.name}"':
+        problems.append(f"the partition table is not {PARTITIONS.name}")
     return problems
 
 
 def test_partitions(csv: Path = PARTITIONS) -> list[tuple[str, int, int]]:
-    """(name, offset, size) of the test build's partitions, from partitions.csv."""
+    """(name, offset, size) of the test build's partitions, from partitions_efusetest.csv."""
     out = []
     for line in csv.read_text(encoding="utf-8").splitlines():
         f = [x.strip() for x in line.split(",")]

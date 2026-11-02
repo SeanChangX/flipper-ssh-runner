@@ -357,12 +357,6 @@ static void on_request(const LinkRequest* r, void* ctx) {
         link_reply_error(ProtoErrBusy, "protecting secrets");
         return;
     }
-    if(link_request_obsolete(r->type)) {
-        /* apps from before the legacy key's removal ask once per run; "not found" is what
-         * they expect from a board without one */
-        link_reply_error(ProtoErrNotFound, "no legacy key");
-        return;
-    }
     switch(r->type) {
     case PROTO_T_HELLO:
         ESP_LOGI(TAG, "HELLO from %s (proto v%u)", r->hello.version, r->hello.proto_version);

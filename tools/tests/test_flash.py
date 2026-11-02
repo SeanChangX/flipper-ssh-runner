@@ -42,7 +42,8 @@ def _args(d, efuse_test=False):
                           "i_understand_this_burns_efuses": False})()
 
 
-VIRTUAL = ["CONFIG_EFUSE_VIRTUAL=y", "CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH=y", "# CONFIG_NVS_ENCRYPTION is not set"]
+VIRTUAL = ["CONFIG_EFUSE_VIRTUAL=y", "CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH=y", "# CONFIG_NVS_ENCRYPTION is not set",
+           'CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_efusetest.csv"']
 
 
 def test_efuse_test_build_accepted(tmp_path, monkeypatch):
@@ -61,6 +62,8 @@ def test_efuse_test_build_accepted(tmp_path, monkeypatch):
     (VIRTUAL + ["CONFIG_NVS_ENCRYPTION=y"], "CONFIG_NVS_ENCRYPTION=y"),
     (VIRTUAL + ["CONFIG_SECURE_FLASH_ENC_ENABLED=y"], "CONFIG_SECURE_FLASH_ENC_ENABLED=y"),
     (VIRTUAL + ["CONFIG_SECURE_BOOT=y"], "CONFIG_SECURE_BOOT=y"),
+    (VIRTUAL[:-1] + ['CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"'],
+     "the partition table is not partitions_efusetest.csv"),  # a build dir from before the split
 ])
 def test_efuse_test_refuses_unsafe_builds(tmp_path, monkeypatch, lines, why):
     d = write_cfg(tmp_path, lines)
@@ -71,7 +74,7 @@ def test_efuse_test_refuses_unsafe_builds(tmp_path, monkeypatch, lines, why):
 
 
 def test_test_partitions_never_touch_the_boards_nvs(tmp_path):
-    parts = flash.test_partitions()  # the real partitions.csv
+    parts = flash.test_partitions()  # the real partitions_efusetest.csv
     assert sorted(n for n, _, _ in parts) == ["efuse_em", "fes_sec", "nvs_test"]
     assert all(off >= 0x320000 for _, off, _ in parts)
     bad = tmp_path / "p.csv"
@@ -79,6 +82,25 @@ def test_test_partitions_never_touch_the_boards_nvs(tmp_path):
                    "efuse_em, data, efuse, 0x340000, 0x2000,\n", encoding="utf-8")
     with pytest.raises(SystemExit, match="overlaps"):
         flash.test_partitions(bad)
+
+
+def _table(name):
+    rows = []
+    for line in (flash.ROOT / "firmware-esp32" / name).read_text(encoding="utf-8").splitlines():
+        f = [x.strip() for x in line.split(",")]
+        if line.strip() and not line.startswith("#"):
+            rows.append(tuple(f[:5]))
+    return rows
+
+
+def test_the_production_table_has_only_what_the_firmware_uses():
+    assert [r[0] for r in _table("partitions.csv")] == ["nvs", "phy_init", "factory", "fes_sec"]
+
+
+def test_the_efusetest_table_is_the_production_table_plus_its_test_partitions():
+    prod, test = _table("partitions.csv"), _table("partitions_efusetest.csv")
+    assert test[: len(prod)] == prod  # the same offsets and sizes: an app-only swap keeps working
+    assert [r[0] for r in test[len(prod):]] == ["nvs_test", "efuse_em"]
 
 
 class _Port:
