@@ -92,7 +92,6 @@ uint16_t link_decode_request(uint8_t type, const uint8_t* p, size_t len, LinkReq
     return ok ? ProtoErrNone : ProtoErrBadPayload;
 }
 
-
 uint32_t link_choose_baud(uint32_t peer_max, uint32_t our_max) {
     static const uint32_t rates[] = {921600, 460800, 230400, 115200};
     uint32_t limit = peer_max < our_max ? peer_max : our_max;
