@@ -33,7 +33,6 @@ typedef enum {
     CmdScript,
     CmdDisconnect,
     CmdKeygen,
-    CmdLegacyExport,
     CmdLock, /* drop unlocked keys from RAM: `id`, or all when empty */
 } CmdType;
 
@@ -80,7 +79,7 @@ static struct {
     const char* key; /* staged key file (owned by the caller until key_release) */
     size_t key_len;
     ProtoKeyGen gen;
-    SshSink key_sink; /* for KEY_GEN / legacy export */
+    SshSink key_sink; /* for KEY_GEN */
     Unlocked unlocked[UNLOCKED_MAX];
 } c;
 
@@ -166,14 +165,6 @@ esp_err_t ssh_client_lock(const char* id) {
     Cmd cmd = {.type = CmdLock};
     snprintf(cmd.id, sizeof(cmd.id), "%s", id ? id : "");
     return xQueueSend(c.cmds, &cmd, pdMS_TO_TICKS(100)) == pdTRUE ? ESP_OK : ESP_ERR_NO_MEM;
-}
-
-esp_err_t ssh_client_legacy_export(const SshSink* sink) {
-    if(!idle()) return ESP_ERR_INVALID_STATE;
-    if(!keystore_legacy_exists()) return ESP_ERR_NOT_FOUND;
-    c.key_sink = *sink;
-    Cmd cmd = {.type = CmdLegacyExport};
-    return xQueueSend(c.cmds, &cmd, 0) == pdTRUE ? ESP_OK : ESP_ERR_NO_MEM;
 }
 
 esp_err_t ssh_client_exec(const char* command) {
@@ -611,24 +602,6 @@ static void do_keygen(void) {
     ssh_key_free(key);
 }
 
-static void do_legacy_export(void) {
-    SshSink sink = c.key_sink;
-    char* pem = keystore_legacy_get();
-    if(!pem) {
-        key_fail(&sink, ProtoReasonNoKey, "No legacy key");
-        return;
-    }
-    ssh_key key = NULL;
-    if(ssh_pki_import_privkey_base64(pem, NULL, NULL, NULL, &key) != SSH_OK) {
-        key_fail(&sink, ProtoReasonBadKey, "Legacy key unreadable");
-    } else {
-        key_out(&sink, key, pem, NULL);
-        ssh_key_free(key);
-    }
-    memset(pem, 0, strlen(pem));
-    free(pem);
-}
-
 static bool authenticate(ssh_key key) {
     if(c.req.auth == ProtoAuthKey) {
         /* IdentitiesOnly: exactly this key, no agent, no other key, no password */
@@ -928,9 +901,6 @@ static void task(void* arg) {
             break;
         case CmdKeygen:
             do_keygen();
-            break;
-        case CmdLegacyExport:
-            do_legacy_export();
             break;
         case CmdLock:
             do_lock(cmd.id);

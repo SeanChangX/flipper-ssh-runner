@@ -33,6 +33,11 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   `0x20000`) instead of three parts; the licenses are in a `licenses/` folder in the firmware
   zips and the PC tool's archives.
 
+### Removed
+
+- The pre-release v0 device key (one key kept in the ESP32's NVS) and its one-time migration
+  to the SD card; boards still answer the old requests, so older apps keep working.
+
 ## [0.2.1] - 2026-10-26
 
 ### Changed

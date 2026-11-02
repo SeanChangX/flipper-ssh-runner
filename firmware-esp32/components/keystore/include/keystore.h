@@ -1,9 +1,8 @@
 /*
  * Persistent secrets and settings in NVS (plaintext until "Protect secrets"):
  * pinned host keys per profile, remembered passwords and key passphrases, WiFi
- * credentials, per-interface IP settings and the host-key decision audit log, plus
- * the v0 device key until it has been migrated. Private keys themselves live on the
- * Flipper's SD card; none crosses the UART except the one-time legacy export.
+ * credentials, per-interface IP settings and the host-key decision audit log. Private
+ * keys themselves live on the Flipper's SD card; none is kept here.
  *
  * SPDX-License-Identifier: GPL-3.0-only
  */
@@ -18,15 +17,6 @@
 #include "proto/proto_msg.h"
 
 esp_err_t keystore_init(void);
-
-/* ---- legacy device key: the single NVS key of v0, exported once to keys/ ---- */
-/* OpenSSH-format private key, malloc'd; the caller wipes and frees it. NULL if none. */
-char* keystore_legacy_get(void);
-bool keystore_legacy_exists(void);
-/* Deletes it only if `crc32` matches the exported file (ESP_ERR_INVALID_ARG otherwise). */
-esp_err_t keystore_legacy_delete(uint32_t crc32);
-/* Console only: create a v0-style key to test the migration. */
-esp_err_t keystore_legacy_generate(void);
 
 /* ---- key passphrases, remembered by key id ("decrypt once") ---- */
 bool keystore_pass_get(const char* id, char* pass, size_t size);
