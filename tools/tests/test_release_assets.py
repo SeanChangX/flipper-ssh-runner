@@ -13,14 +13,35 @@ import release_assets as ra  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 VER = re.search(r'set\(PROJECT_VER "([0-9.]+)"\)', (ROOT / "firmware-esp32/CMakeLists.txt").read_text()).group(1)
+EFUSE_OFF = "CONFIG_IDF_TARGET=\"esp32s3\"\n"
+FLASH_ARGS = ("--flash_mode dio --flash_freq 80m --flash_size 16MB\n0x0 bootloader/bootloader.bin\n"
+              "0x20000 flipper_eth_ssh.bin\n0x8000 partition_table/partition-table.bin\n")
+# (board, zip name, image prefix)
+ZIPS = [(ra.BOARDS[0], f"flipper-ssh-runner-esp32-waveshare-v{VER}", f"flipper-ssh-runner-waveshare-v{VER}"),
+        (ra.BOARDS[1], f"flipper-ssh-runner-esp32-addon-v{VER}", f"flipper-ssh-runner-addon-v{VER}")]
+LICENSES = ["LICENSE", "COPYING.libssh", "BSD.libssh", "LICENSE.esp-idf", "LICENSE.lwip", "LICENSE.freertos",
+            "LICENSE.mbedtls", "THIRD_PARTY_NOTICES.txt"]
 
 
-def builds(tmp: Path, sdkconfig: str = "CONFIG_IDF_TARGET=\"esp32s3\"\n"):
-    esp = tmp / "esp32"
-    for part in ra.FW_PARTS + ra.IDF_LICENSES:
-        (esp / part).parent.mkdir(parents=True, exist_ok=True)
-        (esp / part).write_bytes(part.encode())
-    (esp / "sdkconfig").write_text(sdkconfig)
+def esp_build(esp: Path, board: ra.Board, sdkconfig: str = EFUSE_OFF, factory: bytes | None = None) -> None:
+    esp.mkdir(parents=True)
+    app = board.name.encode() * 100
+    (esp / "flipper_eth_ssh.bin").write_bytes(app)
+    if factory is None:
+        factory = b"\xe9" + b"\xff" * (ra.APP_OFFSET - 1) + app
+    (esp / "factory.bin").write_bytes(factory)
+    (esp / "flash_args").write_text(FLASH_ARGS)
+    (esp / "sdkconfig").write_text(sdkconfig + f"{board.kconfig}=y\n")
+    for name in ra.IDF_LICENSES:
+        (esp / name).write_text(name)
+
+
+def builds(tmp: Path, sdkconfig: str = EFUSE_OFF, factory: bytes | None = None, swap: bool = False):
+    esp, rev = tmp / "esp32", tmp / "esp32-addon"
+    esp_build(esp, ra.BOARDS[0], sdkconfig, factory)
+    esp_build(rev, ra.BOARDS[1])
+    if swap:
+        esp, rev = rev, esp
     cli = tmp / "cli"
     (cli / "sshrunner_linux_amd64_v1").mkdir(parents=True)  # GoReleaser's build folder: not an asset
     for name in (f"sshrunner_{VER}_linux_amd64.tar.gz", f"sshrunner_{VER}_windows_arm64.zip",
@@ -29,7 +50,7 @@ def builds(tmp: Path, sdkconfig: str = "CONFIG_IDF_TARGET=\"esp32s3\"\n"):
     for fw in ("official", "unleashed"):
         (tmp / f"{fw}.fap").write_bytes(fw.encode())
     return ["--fap-official", str(tmp / "official.fap"), "--fap-unleashed", str(tmp / "unleashed.fap"),
-            "--esp32", str(esp), "--cli-dist", str(cli)]
+            "--esp32", str(esp), "--esp32-addon", str(rev), "--cli-dist", str(cli)]
 
 
 def test_the_release_files_and_one_checksum_file(tmp_path):
@@ -37,19 +58,51 @@ def test_the_release_files_and_one_checksum_file(tmp_path):
     ra.main(["assets", VER, str(out)] + builds(tmp_path))
     names = sorted(p.name for p in out.iterdir())
     assert names == sorted([
-        "SHA256SUMS", "ssh_runner-official.fap", "ssh_runner-unleashed.fap", f"flipper-ssh-runner-esp32-v{VER}.zip",
+        "SHA256SUMS", "ssh_runner-official.fap", "ssh_runner-unleashed.fap",
+        f"flipper-ssh-runner-esp32-waveshare-v{VER}.zip", f"flipper-ssh-runner-esp32-addon-v{VER}.zip",
         f"sshrunner_{VER}_linux_amd64.tar.gz", f"sshrunner_{VER}_windows_arm64.zip", f"sshrunner_{VER}_amd64.deb",
     ])
     sums = dict(line.split("  ")[::-1] for line in (out / "SHA256SUMS").read_text().splitlines())
     assert set(sums) == set(names) - {"SHA256SUMS"}
     for name, digest in sums.items():
         assert hashlib.sha256((out / name).read_bytes()).hexdigest() == digest
-    with zipfile.ZipFile(out / f"flipper-ssh-runner-esp32-v{VER}.zip") as z:
-        base = f"flipper-ssh-runner-esp32-v{VER}/"
-        assert sorted(z.namelist()) == sorted(base + n for n in ra.FW_PARTS + ra.IDF_LICENSES + [
-            "COPYING.libssh", "LICENSE", "THIRD_PARTY.md", "README-flash.txt"])
-        assert "sdkconfig" not in " ".join(z.namelist())
-        assert f"v{VER}" in z.read(base + "README-flash.txt").decode()
+
+
+@pytest.mark.parametrize("board,zip_name,image", ZIPS)
+def test_a_firmware_zip_per_board(tmp_path, board, zip_name, image):
+    out = tmp_path / "out"
+    ra.main(["assets", VER, str(out)] + builds(tmp_path))
+    with zipfile.ZipFile(out / f"{zip_name}.zip") as z:
+        base = f"{zip_name}/"
+        assert sorted(z.namelist()) == sorted(
+            [base + "README.txt", base + f"{image}-factory.bin", base + f"{image}-app.bin"]
+            + [base + "licenses/" + n for n in LICENSES])
+        names = " ".join(z.namelist())
+        assert "flash_args" not in names and "sdkconfig" not in names and "THIRD_PARTY.md" not in names
+        app = z.read(base + f"{image}-app.bin")
+        assert board.name.encode() in app
+        assert z.read(base + f"{image}-factory.bin")[ra.APP_OFFSET:] == app
+        assert z.read(base + "licenses/COPYING.libssh") == (ROOT / "firmware-esp32/components/libssh/COPYING").read_bytes()
+        assert z.read(base + "licenses/LICENSE") == (ROOT / "LICENSE").read_bytes()
+        readme = z.read(base + "README.txt").decode()
+    assert f"v{VER}" in readme and board.name in readme
+    assert f"{image}-factory.bin  at 0x0" in readme and f"{image}-app.bin  at 0x20000" in readme
+    assert f"write_flash 0x0 {image}-factory.bin" in readme and f"write_flash 0x20000 {image}-app.bin" in readme
+    assert "erases the board's saved WiFi" in readme and "first install only" in readme
+    assert "flash_args" not in readme and "development image" not in readme
+    # links absolute and pinned to the tag
+    assert f"{ra.REPO}/blob/v{VER}/docs/QUICKSTART.md" in readme
+    assert "](" not in readme
+    assert len(readme.splitlines()) <= 25
+
+
+def test_the_notices_are_plain_text_with_absolute_links():
+    text = ra.third_party_notices(VER)
+    assert not re.search(r"\]\(|^\||^#|`|\*\*", text, flags=re.M)
+    assert f"<{ra.REPO}/blob/v{VER}/LICENSE>" in text
+    assert "libssh" in text and "LGPL-2.1" in text
+    for url in re.findall(r"<([^>]+)>", text):
+        assert url.startswith("https://"), url
 
 
 def test_the_zip_depends_on_its_content_only(tmp_path):
@@ -57,13 +110,25 @@ def test_the_zip_depends_on_its_content_only(tmp_path):
     args = builds(tmp_path)
     ra.main(["assets", VER, str(a)] + args)
     ra.main(["assets", VER, str(b)] + args)
-    name = f"flipper-ssh-runner-esp32-v{VER}.zip"
-    assert (a / name).read_bytes() == (b / name).read_bytes()
+    for _, name, _ in ZIPS:
+        assert (a / f"{name}.zip").read_bytes() == (b / f"{name}.zip").read_bytes()
 
 
 def test_a_firmware_that_burns_efuses_is_refused(tmp_path):
     args = builds(tmp_path, "CONFIG_SECURE_FLASH_ENC_ENABLED=y\n")
     with pytest.raises(SystemExit):
+        ra.main(["assets", VER, str(tmp_path / "out")] + args)
+
+
+def test_the_builds_of_the_two_boards_cannot_be_swapped(tmp_path):
+    args = builds(tmp_path, swap=True)
+    with pytest.raises(SystemExit, match="not a build for"):
+        ra.main(["assets", VER, str(tmp_path / "out")] + args)
+
+
+def test_a_factory_image_that_is_not_bootloader_through_app_is_refused(tmp_path):
+    args = builds(tmp_path, factory=b"\xe9" + b"\xff" * (ra.APP_OFFSET - 1) + b"another app")
+    with pytest.raises(SystemExit, match="factory.bin"):
         ra.main(["assets", VER, str(tmp_path / "out")] + args)
 
 
@@ -87,6 +152,13 @@ def test_notes_keep_the_approved_layout():
     # every heading at the level of "## Install"
     heads = [line for line in notes.splitlines() if line.startswith("#")]
     assert len(heads) > 1 and all(h.startswith("## ") for h in heads)
-    assert "On a first install, erase the flash first; on an update, don't erase, and don't merge " \
-        "the parts into one image at offset 0." in notes
     assert "no Erase" not in notes
+
+
+def test_notes_install_a_factory_image_first_and_the_app_on_updates():
+    notes = ra.notes(VER)
+    assert f"`flipper-ssh-runner-esp32-waveshare-v{VER}.zip`" in notes
+    assert f"`flipper-ssh-runner-esp32-addon-v{VER}.zip`" in notes
+    assert "On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`." in notes
+    assert "On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing" in notes
+    assert "flash_args" not in notes and "three parts" not in notes

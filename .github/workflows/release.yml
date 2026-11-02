@@ -1,7 +1,7 @@
 # Builds a release's files and publishes the release when a version tag (vX.Y.Z) is pushed.
 # Run by hand (workflow_dispatch), or on a pull request that changes how releases are built,
 # it is a dry run: the same files as an artifact, no release. The files are collected by
-# tools/release_assets.py, which tools/release.sh also uses for a local dry run.
+# tools/release_assets.py (docs/RELEASING.md).
 name: release
 
 on:
@@ -12,6 +12,7 @@ on:
       - .github/workflows/release.yml
       - tools/release_assets.py
       - cli/.goreleaser.yaml
+      - cli/scripts/archive_files.sh
   workflow_dispatch:
     inputs:
       version:
@@ -69,35 +70,53 @@ jobs:
           path: flipper-app/dist/ssh_runner.fap
           if-no-files-found: error
 
+  # one build per board (the board is a Kconfig choice), each with its two images: factory.bin
+  # (bootloader, partition table and app merged from 0x0, for a first install) and the app
+  # alone (for updates at 0x20000)
   firmware:
     needs: version
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
+    strategy:
+      matrix:
+        include:
+          - board: esp32 # Waveshare ESP32-S3-ETH, the default
+            defaults: sdkconfig.defaults
+          - board: esp32-addon # SSH Runner add-on, rev 0.1 and later
+            defaults: sdkconfig.defaults;sdkconfig.addon
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # built from scratch, like tools/release.sh: the dev firmware, no eFuse-burning option
+      # built from scratch: the dev firmware, no eFuse-burning option (release_assets.py checks)
       - name: Build
         shell: bash
         env:
           IDF_COMPONENT_MANAGER: "0"
+          DEFAULTS: ${{ matrix.defaults }}
         run: |
           . $IDF_PATH/export.sh
           cd firmware-esp32
-          idf.py -B ../build -D SDKCONFIG=../build/sdkconfig build
-      - name: Collect the parts and the ESP-IDF licences
+          idf.py -B ../build -D SDKCONFIG=../build/sdkconfig -D "SDKCONFIG_DEFAULTS=$DEFAULTS" build
+      # esptool from the same image, on the build's own flash_args: the offsets, flash mode,
+      # frequency and size that idf.py flash would use; no padding past the app
+      - name: Factory image
+        shell: bash
+        working-directory: build
+        run: |
+          . $IDF_PATH/export.sh
+          esptool.py --chip esp32s3 merge_bin -o factory.bin @flash_args
+      # neither ESP-IDF nor mbedTLS (Apache-2.0) ships a NOTICE file in this image
+      - name: Collect the images and the ESP-IDF licences
         shell: bash
         run: |
-          mkdir -p esp32/bootloader esp32/partition_table
-          cp build/bootloader/bootloader.bin esp32/bootloader/
-          cp build/partition_table/partition-table.bin esp32/partition_table/
-          cp build/flipper_eth_ssh.bin build/flash_args build/sdkconfig esp32/
+          mkdir -p esp32
+          cp build/flipper_eth_ssh.bin build/factory.bin build/flash_args build/sdkconfig esp32/
           cp $IDF_PATH/LICENSE esp32/LICENSE.esp-idf
           cp $IDF_PATH/components/lwip/lwip/COPYING esp32/LICENSE.lwip
           cp $IDF_PATH/components/freertos/FreeRTOS-Kernel/LICENSE.md esp32/LICENSE.freertos
           cp $IDF_PATH/components/mbedtls/mbedtls/LICENSE esp32/LICENSE.mbedtls
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: esp32
+          name: ${{ matrix.board }}
           path: esp32
           if-no-files-found: error
 
@@ -146,7 +165,7 @@ jobs:
           python tools/release_assets.py assets "$VERSION" release \
             --fap-official build/fap-OFFICIAL/ssh_runner.fap \
             --fap-unleashed build/fap-UNLEASHED/ssh_runner.fap \
-            --esp32 build/esp32 --cli-dist build/cli
+            --esp32 build/esp32 --esp32-addon build/esp32-addon --cli-dist build/cli
           python tools/release_assets.py notes "$VERSION" > notes.md
           cat release/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

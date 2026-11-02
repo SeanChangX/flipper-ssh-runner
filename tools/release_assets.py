@@ -1,21 +1,25 @@
 """Collect a release's files and notes from the builds, the same way in CI and locally.
 
     python tools/release_assets.py check X.Y.Z
-    python tools/release_assets.py assets X.Y.Z OUT --fap-official F --fap-unleashed F \\
-        --esp32 DIR --cli-dist DIR
+    python tools/release_assets.py assets X.Y.Z OUT --fap-official F --fap-unleashed F \
+        --esp32 DIR --esp32-addon DIR --cli-dist DIR
     python tools/release_assets.py notes X.Y.Z > notes.md
 
 check: the version is the same in CHANGELOG.md, the firmware and the Flipper app.
 
 assets: writes to OUT the files a release carries, and nothing else:
   ssh_runner-official.fap, ssh_runner-unleashed.fap
-  flipper-ssh-runner-esp32-vX.Y.Z.zip   the three firmware parts with flash_args, the licences
-                                        and README-flash.txt
-  sshrunner_X.Y.Z_*                     the PC tool's archives and packages (GoReleaser)
-  SHA256SUMS                            the checksums of all of the above
---esp32 is a firmware build folder (bootloader/, partition_table/, flipper_eth_ssh.bin,
-flash_args, sdkconfig) holding LICENSE.esp-idf, LICENSE.lwip, LICENSE.freertos and
-LICENSE.mbedtls from the ESP-IDF it was built with. A build that would burn eFuses is refused.
+  flipper-ssh-runner-esp32-waveshare-vX.Y.Z.zip  the firmware for the Waveshare ESP32-S3-ETH
+  flipper-ssh-runner-esp32-addon-vX.Y.Z.zip      the firmware for the SSH Runner add-on board
+                                              each: README.txt, the factory image (from 0x0, for
+                                              a first install), the app image (at 0x20000, for
+                                              updates) and licenses/
+  sshrunner_X.Y.Z_*                           the PC tool's archives and packages (GoReleaser)
+  SHA256SUMS                                  the checksums of all of the above
+--esp32 and --esp32-addon are firmware build folders, one per board: flipper_eth_ssh.bin,
+flash_args and sdkconfig from the build, factory.bin (`esptool.py merge_bin @flash_args`), and
+LICENSE.esp-idf, LICENSE.lwip, LICENSE.freertos and LICENSE.mbedtls from the ESP-IDF it was
+built with. A build that would burn eFuses, or one for the other board, is refused.
 
 notes: the version's CHANGELOG section as release notes: one line per paragraph or list item
 (GitHub keeps hard line breaks), links to files pointing at the tag, and how to install.
@@ -30,63 +34,73 @@ import hashlib
 import re
 import shutil
 import sys
+import textwrap
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from tools.flash import efuse_burning_options  # noqa: E402
+from tools.flash import efuse_burning_options, sdkconfig_values  # noqa: E402
 
 REPO = "https://github.com/SeanChangX/flipper-ssh-runner"
-FW_PARTS = ["bootloader/bootloader.bin", "partition_table/partition-table.bin", "flipper_eth_ssh.bin", "flash_args"]
+APP = "flipper_eth_ssh.bin"
+FACTORY = "factory.bin"
+APP_OFFSET = 0x20000  # the factory app partition (firmware-esp32/partitions.csv)
+BUILD_FILES = [APP, FACTORY, "flash_args", "sdkconfig"]
 IDF_LICENSES = ["LICENSE.esp-idf", "LICENSE.lwip", "LICENSE.freertos", "LICENSE.mbedtls"]
+REPO_LICENSES = {  # name in licenses/: file in the repository
+    "LICENSE": "LICENSE",
+    "COPYING.libssh": "firmware-esp32/components/libssh/COPYING",
+    "BSD.libssh": "firmware-esp32/components/libssh/BSD",
+}
+NOTICES = "THIRD_PARTY_NOTICES.txt"
 CLI_KINDS = (".tar.gz", ".zip", ".deb", ".rpm")
 ZIP_TIME = (1980, 1, 1, 0, 0, 0)  # every member dated the same: the zip depends on its content only
 
-FLASH_README = """SSH Runner v{ver}: ESP32-S3 firmware (Waveshare ESP32-S3-ETH), development image
 
-Flash the three parts at their own offsets (flash_args lists them):
+@dataclass(frozen=True)
+class Board:
+    arg: str  # the argparse destination of its build folder
+    tag: str  # in the file names
+    name: str
+    kconfig: str  # the board's option in the Kconfig choice FES_BOARD
 
-    0x0      bootloader/bootloader.bin
-    0x8000   partition_table/partition-table.bin
-    0x20000  flipper_eth_ssh.bin
 
-First install (a new board, or one that ran other firmware): erase the flash first.
-Update (the board already runs SSH Runner): do not erase; flashing the three parts keeps the
-board's WiFi network, remembered passwords and trusted host keys.
+BOARDS = (
+    Board("esp32", "waveshare", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH"),
+    Board("esp32_addon", "addon", "SSH Runner add-on board, rev 0.1 and later", "CONFIG_FES_BOARD_SSH_RUNNER_ADDON"),
+)
 
-In the browser (desktop Chrome or Edge): https://esptool.spacehuhn.com/
-Connect, Erase (first install only), then set the rows (offset after "0x", file with Select)
-to 0, 8000 and 20000 with the three files: the page starts with 1000, 8000, E000, 10000, so
-change 1000 to 0 and 10000 to 20000 and remove the E000 row. Program. Step by step:
-docs/QUICKSTART.md in the repository. Espressif's https://espressif.github.io/esptool-js/
-works the same way (Erase Flash on a first install only).
+FLASH_README = """SSH Runner v{ver}: ESP32-S3 firmware for the {board}
 
-Or with esptool (pip install esptool), from this folder:
+First install (a new board, or one that ran other firmware): erase the flash, then write
+    {factory}  at 0x0
+The factory image also covers the settings (NVS) partition: it erases the board's saved WiFi
+and trusted host keys, so it is for a first install only.
+Update (the board already runs SSH Runner): do not erase, write only
+    {app}  at 0x20000
+This keeps the board's saved WiFi and trusted host keys.
 
-    esptool.py --chip esp32s3 -p <port> erase_flash              (first install only)
-    esptool.py --chip esp32s3 -p <port> write_flash @flash_args
+In the browser (desktop Chrome or Edge): https://esptool.spacehuhn.com/ or
+https://espressif.github.io/esptool-js/ : Connect, Erase (first install only), one row with
+the offset and the file (a row without a file is skipped), Program.
+With esptool (pip install esptool), from this folder; <port> is e.g. COM5, /dev/ttyACM0 or
+/dev/cu.usbmodem*:
+    first install:  esptool.py --chip esp32s3 -p <port> erase_flash
+                    esptool.py --chip esp32s3 -p <port> write_flash 0x0 {factory}
+    update:         esptool.py --chip esp32s3 -p <port> write_flash 0x20000 {app}
 
-(<port>: COM5 on Windows, /dev/ttyACM0 on Linux, /dev/cu.usbmodem* on macOS; the board's
-own USB-C port.)
-
-If the board is wired for portable use (the Flipper's GPIO pin 9 to the board's 3V3), remove
-that wire before you plug in the board's USB-C.
-
-Do NOT merge the parts into one image written at offset 0: that also overwrites the nvs
-partition between them and erases the board's WiFi credentials and trusted host keys.
-
-This image burns no eFuses. Settings > Security > Protect Secrets on the Flipper is the only
-step that does, and only when you confirm it there.
-
-Licenses of the parts linked into the firmware: LICENSE.* and COPYING.libssh in this archive.
+Remove the Flipper's 3V3 wire before you plug in the board's USB-C. The image burns no eFuses.
+Step by step: {doc}docs/QUICKSTART.md#2-flash-the-esp32
+Wiring: {doc}docs/HARDWARE.md   Licenses: licenses/
 """
 
 INSTALL = """## Install
 
 **Flipper app.** Download `ssh_runner-official.fap`: it runs on the official firmware and on Unleashed. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader and open it from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only. If the Flipper reports an API mismatch or an outdated app after a firmware update, download the latest release.
 
-**ESP32-S3 board** (Waveshare ESP32-S3-ETH, wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)): unzip `flipper-ssh-runner-esp32-v{ver}.zip` and flash its three parts at their offsets: in the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with `esptool.py --chip esp32s3 -p <port> write_flash @flash_args`. On a first install, erase the flash first; on an update, don't erase, and don't merge the parts into one image at offset 0. Remove the 3V3 wire before connecting the board's USB-C.
+**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-addon-v{ver}.zip` for the SSH Runner add-on board, rev 0.1 and later. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
 
 **sshrunner, the PC tool** (optional): the archive for your system (`sshrunner_{ver}_<os>_<arch>`), or the `.deb` / `.rpm` on Linux. It edits the hosts, commands, keys and scripts on the Flipper over USB, with a backup first: [PC Tool]({doc}cli/README.md).
 
@@ -145,6 +159,66 @@ def notes(ver: str) -> str:
     return unwrap(sec).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
 
 
+def plain(md: str, ver: str) -> str:
+    """Markdown inline text as plain text: a link becomes `text <absolute URL>`."""
+
+    def link(m: re.Match[str]) -> str:
+        text, url = m.group(1).replace("`", ""), m.group(2)
+        if not re.match(r"https?://", url):
+            url = f"{REPO}/blob/v{ver}/{url}"  # relative to THIRD_PARTY.md, at the repository's root
+        return url if text == url else f"{text} <{url}>"
+
+    return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", link, md).replace("`", "").replace("**", "")
+
+
+def third_party_notices(ver: str) -> str:
+    """THIRD_PARTY.md as plain text: no Markdown, every link an absolute URL pinned to the tag."""
+    wrap = dict(width=79, break_long_words=False, break_on_hyphens=False)
+    out = [f"SSH Runner v{ver}: third-party notices", "",
+           f"From {REPO}/blob/v{ver}/THIRD_PARTY.md",
+           "The license texts are in this folder.", ""]
+    para: list[str] = []
+    cols: list[str] = []
+
+    def flush() -> None:
+        if para:
+            out.extend(textwrap.wrap(plain(" ".join(para), ver), **wrap))
+            out.append("")
+            para.clear()
+
+    for line in (ROOT / "THIRD_PARTY.md").read_text(encoding="utf-8").splitlines():
+        s = line.strip()
+        if s.startswith("[←"):
+            continue
+        if s.startswith("|"):
+            flush()
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if not cols:
+                cols = cells
+            elif not all(set(c) <= set("-: ") for c in cells):
+                item = textwrap.wrap(plain(cells[0], ver), initial_indent="* ", subsequent_indent="  ", **wrap)
+                for col, cell in zip(cols[1:], cells[1:]):
+                    if cell:
+                        item += textwrap.wrap(plain(f"{col}: {cell}", ver), initial_indent="  ",
+                                              subsequent_indent="    ", **wrap)
+                out.extend(item)
+            continue
+        if cols:  # the end of a table
+            cols = []
+            out.append("")
+        m = re.match(r"(#+) (.*)", s)
+        if m:
+            flush()
+            title = plain(m.group(2), ver)
+            out += [title, ("=" if len(m.group(1)) == 1 else "-") * len(title), ""]
+        elif s:
+            para.append(s)
+        else:
+            flush()
+    flush()
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
+
+
 def sha256(p: Path) -> str:
     h = hashlib.sha256()
     with p.open("rb") as f:
@@ -160,27 +234,62 @@ def zip_add(z: zipfile.ZipFile, name: str, data: bytes) -> None:
     z.writestr(info, data)
 
 
-def assets(ver: str, out: Path, a: argparse.Namespace) -> None:
-    check(ver)
-    esp = Path(a.esp32)
+def flash_offsets(flash_args: Path) -> dict[str, int]:
+    """The files in an idf.py flash_args and their offsets (its first line holds the options)."""
+    out = {}
+    for line in flash_args.read_text(encoding="utf-8").splitlines()[1:]:
+        off, _, file = line.strip().partition(" ")
+        if file:
+            out[file.strip()] = int(off, 0)
+    return out
+
+
+def check_build(esp: Path, board: Board) -> None:
+    for name in BUILD_FILES + IDF_LICENSES:
+        if not (esp / name).is_file():
+            die(f"{esp / name} is missing")
     burning = efuse_burning_options(esp)
     if burning:
         die(f"{esp} enables {' '.join(burning)}: not the development firmware")
+    if sdkconfig_values(esp).get(board.kconfig) != "y":
+        die(f"{esp} is not a build for the {board.name} ({board.kconfig} is not set)")
+    offsets = flash_offsets(esp / "flash_args")
+    if offsets.get("bootloader/bootloader.bin") != 0 or offsets.get(APP) != APP_OFFSET:
+        die(f"{esp / 'flash_args'} does not put the bootloader at 0x0 and the app at {APP_OFFSET:#x}")
+    factory, app = (esp / FACTORY).read_bytes(), (esp / APP).read_bytes()
+    if factory[:1] != b"\xe9" or len(factory) != APP_OFFSET + len(app) or factory[APP_OFFSET:] != app:
+        die(f"{esp / FACTORY} is not the bootloader from 0x0 through this app at {APP_OFFSET:#x}")
+
+
+def firmware_zip(ver: str, out: Path, esp: Path, board: Board) -> None:
+    check_build(esp, board)
+    stem = f"flipper-ssh-runner-{board.tag}-v{ver}"
+    factory, app = f"{stem}-factory.bin", f"{stem}-app.bin"
+    zip_name = f"flipper-ssh-runner-esp32-{board.tag}-v{ver}"
+    base = f"{zip_name}/"
+    readme = FLASH_README.format(ver=ver, board=board.name, factory=factory, app=app, doc=f"{REPO}/blob/v{ver}/")
+    with zipfile.ZipFile(out / f"{zip_name}.zip", "w") as z:
+        zip_add(z, base + "README.txt", readme.encode())
+        zip_add(z, base + factory, (esp / FACTORY).read_bytes())
+        zip_add(z, base + app, (esp / APP).read_bytes())
+        for name, src in REPO_LICENSES.items():
+            zip_add(z, base + "licenses/" + name, (ROOT / src).read_bytes())
+        for name in IDF_LICENSES:
+            zip_add(z, base + "licenses/" + name, (esp / name).read_bytes())
+        zip_add(z, base + "licenses/" + NOTICES, third_party_notices(ver).encode())
+
+
+def assets(ver: str, out: Path, a: argparse.Namespace) -> None:
+    check(ver)
+    for board in BOARDS:  # every build checked before anything is written
+        check_build(Path(getattr(a, board.arg)), board)
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
     shutil.copyfile(a.fap_official, out / "ssh_runner-official.fap")
     shutil.copyfile(a.fap_unleashed, out / "ssh_runner-unleashed.fap")
-    base = f"flipper-ssh-runner-esp32-v{ver}/"
-    with zipfile.ZipFile(out / f"flipper-ssh-runner-esp32-v{ver}.zip", "w") as z:
-        for part in FW_PARTS + IDF_LICENSES:
-            if not (esp / part).is_file():
-                die(f"{esp / part} is missing")
-            zip_add(z, base + part, (esp / part).read_bytes())
-        zip_add(z, base + "COPYING.libssh", (ROOT / "firmware-esp32/components/libssh/COPYING").read_bytes())
-        zip_add(z, base + "LICENSE", (ROOT / "LICENSE").read_bytes())
-        zip_add(z, base + "THIRD_PARTY.md", (ROOT / "THIRD_PARTY.md").read_bytes())
-        zip_add(z, base + "README-flash.txt", FLASH_README.format(ver=ver).encode())
+    for board in BOARDS:
+        firmware_zip(ver, out, Path(getattr(a, board.arg)), board)
     cli = sorted(p for p in Path(a.cli_dist).glob(f"sshrunner_{ver}_*") if p.name.endswith(CLI_KINDS))
     if not cli:
         die(f"no sshrunner_{ver}_* archives in {a.cli_dist}")
@@ -203,7 +312,7 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("assets")
     s.add_argument("version")
     s.add_argument("out")
-    for opt in ("--fap-official", "--fap-unleashed", "--esp32", "--cli-dist"):
+    for opt in ("--fap-official", "--fap-unleashed", "--esp32", "--esp32-addon", "--cli-dist"):
         s.add_argument(opt, required=True)
     a = ap.parse_args(argv)
     if not re.fullmatch(r"\d+\.\d+\.\d+", a.version):

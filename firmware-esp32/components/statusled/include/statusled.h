@@ -1,7 +1,7 @@
 /*
  * The board's status LED: one LED that says boot / linking / link up / SSH session / error
  * (patterns in statusled_sm.h). The light itself is a driver behind StatusLedDriver: the
- * prototype's WS2812 on GPIO21, or rev 0.1's single green LED (D201) on a plain GPIO; the
+ * prototype's WS2812 on GPIO21, or the add-on board's single green LED (D201) on a plain GPIO; the
  * Kconfig board choice picks one.
  * The RJ45 LEDs are the W5500's own and not touched here.
  *
