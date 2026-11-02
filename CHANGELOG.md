@@ -45,6 +45,14 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   ones are gone. A board flashed before v0.3.0 needs one first install (erase, then the factory
   image) to get the new table; an app-only update keeps the old table, which still works.
 
+### Fixed
+
+- Clearer replies on the board's USB console: `pw`, `pp` and `trust` say when no prompt is
+  pending, and `hostkeys` and other commands print their usage instead of a bare error code.
+- `wifi scan` and `ping` print their results before the next prompt, and `wifi scan` lines up
+  SSIDs in Chinese, Japanese or Korean.
+- `stats` and `ping` no longer show 0 ms when nothing was measured.
+
 ### Removed
 
 - The pre-release v0 device key (one key kept in the ESP32's NVS) and its one-time migration
