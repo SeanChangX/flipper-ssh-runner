@@ -328,6 +328,13 @@ void keystore_audit_dump(void) {
     if(!log) return;
     audit_load(log);
     static const char* const names[] = {"cancel", "once", "add", "replace"};
+    if(!log->count) {
+        printf("no host-key decisions recorded\n");
+        free(log);
+        return;
+    }
+    /* no real-time clock: the time is the board's uptime, in seconds, when it was decided */
+    printf("%10s  %-8s %-20s %s\n", "uptime s", "decision", "profile", "fingerprint");
     for(uint8_t i = 0; i < log->count; i++) {
         const AuditEntry* e = &log->e[(log->next + AUDIT_MAX - log->count + i) % AUDIT_MAX];
         printf(
