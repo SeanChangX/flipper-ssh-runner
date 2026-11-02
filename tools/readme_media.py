@@ -1,12 +1,16 @@
-"""Build the README's hero image and demo GIF from the screenshots in docs/screenshots/.
+"""Build the README's hero image and demo GIF.
 
     venv\\Scripts\\python tools\\readme_media.py        (Windows)
     venv/bin/python tools/readme_media.py              (Linux)
     ... --style white --preview DIR                    (the other surround, written to DIR)
+    ... --demo-frames DIR                              (where the GIF's screens are)
 
-Writes docs/media/hero.png (the core flow as a 2x2 grid, transparent background, so it sits
-on GitHub's light and dark themes alike) and docs/media/demo.gif (the same flow, one screen
-at a time). Each screen is drawn like the Flipper's screen window: the orange backlight shows
+Writes docs/media/hero.png (the core flow as a 2x2 grid from docs/screenshots/, transparent
+background, so it sits on GitHub's light and dark themes alike) and docs/media/demo.gif (a
+session on the real board, one screen at a time). The GIF's screens are 4x screenshots taken
+over USB RPC on a real Flipper with the board, against a test SSH server ("homelab": key
+login, a few commands and an SD card script); they are not in the repository, as they show
+that network's addresses. Each screen is drawn like the Flipper's screen window: the orange backlight shows
 around the 128x64 pixels, the window has rounded corners and sits in a surround: dark grey in
 the hero, white with a thin grey edge in the GIF (transparent around it).
 
@@ -26,6 +30,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 SHOTS = ROOT / "docs" / "screenshots"
+DEMO_FRAMES = ROOT / ".cache" / "demo" / "shots"  # the GIF's screens (git-ignored), see above
 OUT = ROOT / "docs" / "media"
 SHOT_SCALE = 4  # the screenshots are 4x the Flipper's 128x64
 
@@ -37,17 +42,18 @@ HERO = [
     ("14-output-uname.png", "4  Output and exit code"),
 ]
 HERO_SCALE = 4  # 2x2 tiles at 4x (1288 px), shown at half width: crisp on 1x and on HiDPI screens
-# The same flow as a walk, one screen per frame (ms on screen).
+# A session on the real board, one screen per frame (in DEMO_FRAMES; ms on screen): a saved
+# host, key login, three commands and an SD card script.
 DEMO = [
-    ("52b-home-quick-connect.png", "Home", 1400),
-    ("07-quick-connect-empty.png", "Quick Connect", 1200),
-    ("08-quick-connect-typed.png", "Type user@host", 1400),
-    ("09-connecting.png", "Connecting", 1200),
-    ("10-hostkey-new.png", "Check the host key", 1500),
-    ("12-password-typed.png", "Password", 1300),
-    ("13b-run-menu-type-command.png", "Run a command", 1300),
-    ("13c-command-typed.png", "Type the command", 1400),
-    ("14-output-uname.png", "Output and exit code", 2800),
+    ("01-home.png", "Home", 1300),
+    ("03-hosts.png", "Saved hosts", 1300),
+    ("04-host-page.png", "Connect", 1300),
+    ("05-run-menu.png", "Key login: the run menu", 1700),
+    ("06-out-fetch.png", "$ fetch", 2300),
+    ("08-out-usage.png", "$ usage", 2600),
+    ("10-out-services.png", "$ services", 2300),
+    ("13-script-confirm.png", "A script from the SD card", 1700),
+    ("16-out-health-summary.png", "Its output and exit code", 2800),
 ]
 DEMO_SCALE = 3
 
@@ -86,9 +92,9 @@ def font(size: int) -> ImageFont.ImageFont:
         return ImageFont.load_default()
 
 
-def screen_at(shot: str, k: int) -> Image.Image:
+def screen_at(shot: Path, k: int) -> Image.Image:
     """The screenshot at k x the Flipper's pixels: down to 1x, then up, both nearest-neighbour."""
-    im = Image.open(SHOTS / shot).convert("RGBA")
+    im = Image.open(shot).convert("RGBA")
     w, h = im.width // SHOT_SCALE, im.height // SHOT_SCALE
     return im.resize((w, h), Image.Resampling.NEAREST).resize((w * k, h * k), Image.Resampling.NEAREST)
 
@@ -97,7 +103,7 @@ def px(v: float, k: int) -> int:
     return max(1, round(v * k))
 
 
-def tile(shot: str, label: str, k: int, rounded: bool = True,
+def tile(shot: Path, label: str, k: int, rounded: bool = True,
          style: str | None = None) -> Image.Image:
     st = STYLES[style or STYLE]
     screen = screen_at(shot, k)
@@ -131,7 +137,7 @@ def tile(shot: str, label: str, k: int, rounded: bool = True,
 
 def hero(out: Path) -> Path:
     k = HERO_SCALE
-    tiles = [tile(s, label, k) for s, label in HERO]
+    tiles = [tile(SHOTS / s, label, k) for s, label in HERO]
     tw, th = tiles[0].size
     gap, margin = GAP * k, MARGIN * k
     img = Image.new("RGBA", (2 * margin + 2 * tw + gap, 2 * margin + 2 * th + gap), (0, 0, 0, 0))
@@ -141,13 +147,13 @@ def hero(out: Path) -> Path:
     return out
 
 
-def demo(out: Path) -> Path:
+def demo(out: Path, src: Path = DEMO_FRAMES) -> Path:
     # rounded corners on a transparent page; GIF transparency is all or nothing, so a corner pixel
     # is kept from a quarter coverage up (the grey edge stays whole) and the rest is the key colour
     key = (255, 0, 255)
     frames = []
     for s, label, _ in DEMO:
-        t = tile(s, label, DEMO_SCALE, style=DEMO_STYLE)
+        t = tile(src / s, label, DEMO_SCALE, style=DEMO_STYLE)
         f = Image.new("RGB", t.size, key)
         f.paste(t.convert("RGB"), (0, 0), t.getchannel("A").point(lambda v: 255 if v >= 64 else 0))
         frames.append(f)
@@ -170,6 +176,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Build the README hero image and demo GIF.")
     ap.add_argument("--style", choices=sorted(STYLES), default=STYLE, help="the surround of each screen")
     ap.add_argument("--preview", metavar="DIR", help="write hero-<style>.png and demo-<style>.gif to DIR instead")
+    ap.add_argument("--demo-frames", metavar="DIR", type=Path, default=DEMO_FRAMES,
+                    help=f"the GIF's 4x screenshots (default {DEMO_FRAMES.relative_to(ROOT)})")
     args = ap.parse_args(argv)
     STYLE = args.style
     if args.preview:
@@ -179,7 +187,10 @@ def main(argv: list[str] | None = None) -> int:
         out = OUT
         names = ("hero.png", "demo.gif")
     out.mkdir(parents=True, exist_ok=True)
-    for p in (hero(out / names[0]), demo(out / names[1])):
+    missing = [s for s, *_ in DEMO if not (args.demo_frames / s).exists()]
+    if missing:
+        ap.error(f"the GIF's screens are not in {args.demo_frames}: {', '.join(missing)}")
+    for p in (hero(out / names[0]), demo(out / names[1], args.demo_frames)):
         im = Image.open(p)
         print(f"{p}: {p.stat().st_size} B, {im.size[0]}x{im.size[1]}")
     return 0
