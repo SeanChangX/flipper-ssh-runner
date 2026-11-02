@@ -3,7 +3,7 @@
 
 #include "ssh_client.h"
 
-/* "fes 0.2.0": the firmware's short name and PROJECT_VER (firmware-esp32/CMakeLists.txt) */
+/* "fes 0.3.0": the firmware's short name and PROJECT_VER (firmware-esp32/CMakeLists.txt) */
 const char* app_fw_version(void);
 
 /* Flipper link front-end (app.c) */
