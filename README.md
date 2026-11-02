@@ -227,9 +227,16 @@ a bug, run the checks and send a change.
 
 ## License
 
-[GPL-3.0-only](LICENSE). The add-on board's hardware design is
-[CERN-OHL-S-2.0](hardware/LICENSE) ([`hardware/`](hardware/README.md#license)). Third-party components
-and their licenses: [THIRD_PARTY.md](THIRD_PARTY.md).
+The firmware, the Flipper app, the PC tool and the scripts in `hardware/tools/` are
+[GPL-3.0-only](LICENSE).
+
+The hardware design in `hardware/` is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+([`hardware/LICENSE`](hardware/LICENSE)). Commercial use of the hardware design or any derivative
+works is not permitted without explicit permission from the author. For commercial licensing,
+contact: scx@gapp.nthu.edu.tw
+
+Third-party components and their licenses: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Acknowledgments
 

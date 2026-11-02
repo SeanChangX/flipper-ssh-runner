@@ -2,7 +2,9 @@
 
 [← Documentation index](../docs/README.md)
 
-<!-- SPDX-License-Identifier: CERN-OHL-S-2.0 -->
+<!-- SPDX-License-Identifier: CC-BY-NC-SA-4.0 -->
+
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 A Flipper Zero GPIO add-on for SSH Runner: an ESP32-S3-WROOM-1-N16R8, a W5500 Ethernet controller
 and an RJ45 magjack on one 67.34 × 36 mm 4-layer board that plugs into the Flipper's top header.
@@ -111,10 +113,18 @@ To open the design in the KiCad GUI, use KiCad 10.0.7 or a newer 10.0.x and open
 
 ## License
 
-- **Hardware design** (schematics, board, footprints, fabrication files and these documents):
-  [CERN-OHL-S-2.0](LICENSE), the CERN Open Hardware Licence version 2, strongly reciprocal.
-- **Scripts** in `tools/`: GPL-3.0-only, as the rest of the project's code
-  ([`../LICENSE`](../LICENSE)).
+The hardware design in `hardware/` is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+([`LICENSE`](LICENSE)). Commercial use of the hardware design or any derivative works is not
+permitted without explicit permission from the author. For commercial licensing, contact:
+scx@gapp.nthu.edu.tw
+
+What that covers, and what keeps its own licence:
+
+- **Hardware design**, CC BY-NC-SA 4.0: the schematics, the board, the project's own footprint
+  (`Pads_1x09_P1.27mm_SMD`), the fabrication files and these documents.
+- **Scripts** in `tools/`: GPL-3.0-only, unchanged, as the firmware, the Flipper app and the PC
+  tool ([`../LICENSE`](../LICENSE)).
 - **Project footprints** in `ssh_runner.pretty/` derived from KiCad's library (the `*_EdgeTrim`
   copies and the reverse-mount LED): CC-BY-SA-4.0, the
   [KiCad libraries' licence](https://www.kicad.org/libraries/license/). KiCad's exception for

@@ -201,7 +201,7 @@ def title_block(board):
     tb.SetRevision("0.1")
     tb.SetCompany("flipper-ssh-runner")
     tb.SetComment(0, "SSH Runner add-on for Flipper Zero")
-    tb.SetComment(1, "License: CERN-OHL-S-2.0 (logo: all rights reserved, hardware/art/LICENSE.md)")
+    tb.SetComment(1, "License: CC-BY-NC-SA-4.0 (logo: all rights reserved, hardware/art/LICENSE.md)")
     tb.SetComment(2, "Design notes: hardware/DESIGN.md")
     board.SetTitleBlock(tb)
 

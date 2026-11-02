@@ -27,8 +27,8 @@ each firmware zip.
 
 ## Add-on board (hardware/)
 
-The board's design files are CERN-OHL-S-2.0 ([`hardware/LICENSE`](hardware/LICENSE)); the scripts in
-`hardware/tools/` are GPL-3.0-only, as the rest of the project's code.
+The board's design files are CC BY-NC-SA 4.0, non-commercial ([`hardware/LICENSE`](hardware/LICENSE)); the
+scripts in `hardware/tools/` are GPL-3.0-only, as the rest of the project's code.
 
 | Component | Where | License | Notes |
 |---|---|---|---|

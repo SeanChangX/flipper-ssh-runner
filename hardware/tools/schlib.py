@@ -360,7 +360,7 @@ class Design:
         return ["title_block", ["title", Q(sheet_title)], ["date", Q(self.date)], ["rev", Q(self.rev)],
                 ["company", Q("flipper-ssh-runner")],
                 ["comment", "1", Q(self.title)],
-                ["comment", "2", Q("License: CERN-OHL-S-2.0 (logo: all rights reserved, hardware/art/LICENSE.md)")],
+                ["comment", "2", Q("License: CC-BY-NC-SA-4.0 (logo: all rights reserved, hardware/art/LICENSE.md)")],
                 ["comment", "3", Q("Design notes: hardware/DESIGN.md")]]
 
     def write(self, outdir):

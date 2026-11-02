@@ -10,7 +10,7 @@
 		(rev "0.1")
 		(company "flipper-ssh-runner")
 		(comment 1 "SSH Runner add-on for Flipper Zero")
-		(comment 2 "License: CERN-OHL-S-2.0 (logo: all rights reserved, hardware/art/LICENSE.md)")
+		(comment 2 "License: CC-BY-NC-SA-4.0 (logo: all rights reserved, hardware/art/LICENSE.md)")
 		(comment 3 "Design notes: hardware/DESIGN.md")
 	)
 	(lib_symbols)
