@@ -20,15 +20,24 @@
 
 static const char* TAG = "main";
 
+/* The WiFi driver's own tags: about 20 INFO lines at boot and on every join (init, PHY,
+ * block-ack sessions). Kept to warnings and errors; net logs what matters (the address). */
+static const char* const QUIET_TAGS[] =
+    {"wifi", "wifi_init", "pp", "net80211", "phy_init", "esp_netif_handlers"};
+
 void app_main(void) {
+    for(size_t i = 0; i < sizeof(QUIET_TAGS) / sizeof(QUIET_TAGS[0]); i++)
+        esp_log_level_set(QUIET_TAGS[i], ESP_LOG_WARN);
+
     esp_chip_info_t chip;
     esp_chip_info(&chip);
     ESP_LOGI(
         TAG,
-        "%s on %s: %d core(s), rev %d, protocol v%d, psram %u KB",
+        "%s on %s: %d core(s) at %d MHz, rev %d, protocol v%d, psram %u KB",
         app_fw_version(),
         CONFIG_FES_BOARD_NAME,
         chip.cores,
+        CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
         chip.revision,
         PROTO_VERSION,
         (unsigned)(heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / 1024));
