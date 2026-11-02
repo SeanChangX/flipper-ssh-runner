@@ -223,15 +223,21 @@ the link layer, before request decoding.
 
 **Connect sequence (password profile, prompt policy, unknown key):**
 
-```text
-F  SSH_CONNECT ─────────────▶ E        (ACK)
-F ◀─ SSH_STATE_EVT(connecting) ─ E
-F ◀─ HOSTKEY_PROMPT_EVT(unknown) E      E stops here until a decision arrives.
-F  HOSTKEY_DECISION(add) ───▶ E
-F ◀─ SSH_STATE_EVT(password_wait) E    Never before the host-key decision.
-F  AUTH_PASSWORD ───────────▶ E
-F ◀─ SSH_STATE_EVT(authenticating) E
-F ◀─ SSH_STATE_EVT(ready) ──── E
+```mermaid
+sequenceDiagram
+    participant F as F (Flipper)
+    participant E as E (ESP32)
+    F->>E: SSH_CONNECT
+    E-->>F: ACK
+    E->>F: SSH_STATE_EVT(connecting)
+    E->>F: HOSTKEY_PROMPT_EVT(unknown)
+    Note over E: Stops here until a decision arrives
+    F->>E: HOSTKEY_DECISION(add)
+    E->>F: SSH_STATE_EVT(password_wait)
+    Note over E: Never before the host-key decision
+    F->>E: AUTH_PASSWORD
+    E->>F: SSH_STATE_EVT(authenticating)
+    E->>F: SSH_STATE_EVT(ready)
 ```
 
 - **Password-safety rule:** E never asks for, and never sends, a password before the

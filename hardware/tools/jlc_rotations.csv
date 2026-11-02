@@ -1,0 +1,31 @@
+# Rotation and position corrections for JLCPCB's placement (CPL), read by hardware/tools/cam.py.
+# cam.py places every part at the centre of its soldered pads (the convention of
+# Bouni/kicad-jlcpcb-tools); a correction turns KiCad's rotation into JLC's and may move the part.
+# Rows marked "mainstream" carry the value of kicad-jlcpcb-tools' default correction table
+# (matthewlai/JLCKicadTools cpl_rotations_db.csv, read 2026-10-25); the others are this project's.
+# Check every part in JLC's placement preview after the upload and set verified=yes once it sits
+# right there.
+#
+# match: a regular expression on the footprint name (without the library), or "ref:<Designator>"
+#        for one part (a ref: row wins over a footprint row).
+# offset: degrees added to KiCad's rotation (counter-clockwise, as KiCad), on either side.
+# dx, dy: optional, mm in the footprint's own frame (KiCad axes, y down, before rotation), added to
+#        the pad centre and turned with the part (top side only).
+# The first matching footprint row applies. Lines starting with # are comments.
+# Every footprint on ssh-runner.kicad_pcb has a row; the notes name the parts that use it.
+match,offset,dx,dy,verified,note
+ref:J201,0,,,yes,USB-C (HRO TYPE-C-31-M-12 EdgeTrim copy): JLC's preview (2026-10-25) put the opening inward and the pins off the pads with the mainstream 180; CPL 180 (KiCad 180 + 0) sits right
+ref:D201,180,,,yes,green LED C3646937: its JLC model's 0 deg polarity is opposite to C3646935's (D103); CPL 0 (KiCad 180 + 180) puts its cathode mark on pad 1 = GND in JLC's preview (2026-10-25)
+^SOT-583,-90,,,yes,U102 TPS2116 (SOT-583-8): no mainstream entry; same lead layout as SOT-23-6 (KiCad pin 1 top of the left column; JLC's 0 deg has the pins along the bottom with pin 1 at the left) so the SOT-23 family value
+^SOT-23,-90,,,yes,mainstream; U101 TLV757P (SOT-23-5) and U202 USBLC6-2SC6 (SOT-23-6; not symmetric: pins 2 GND and 5 VBUS swap at 180)
+^LQFP-,270,,,yes,mainstream; U301 W5500: pin 1 dot lower right on the board
+^ESP32-S3-WROOM-1,0,,,yes,U201 module (EdgeTrim copy): no mainstream entry (^ESP32-W is the WROVER); antenna toward the top edge
+^USB_C_Receptacle_HRO_TYPE-C-31-M-12,180,,,no,mainstream (HRO TYPE-C-31-M-12) for the library footprint; J201 uses the EdgeTrim copy and takes ref:J201 above
+^RJ45_,0,,,yes,J301 HY911105AE on the HR911105A footprint: no mainstream entry; opening at the top edge
+^PinHeader_1x(08|10)_P2.54mm_Horizontal,90,,,yes,J401/J402 THT right-angle (EdgeTrim copies): no mainstream entry (only 2x05 vertical); the pad centre is the pin-row centre; pins down past the bottom edge (JLC preview 2026-10-25)
+^LED_1206_.*ReverseMount,0,,,yes,D103 (white) reverse-mount LED: no mainstream entry; pad 1 = cathode = GND (D201 takes ref:D201 above)
+^JST_SH_,0,,,no,J202 Qwiic (DNP; not in the CPL)
+^Crystal_SMD_,0,,,yes,Y301 25 MHz: no mainstream entry; pin 1 at XI
+^D_SOD-123,0,,,yes,D101 B5819W: no mainstream entry; pad 1 = cathode = V5_IN
+^SW_SPST_,0,,,no,SW201 RESET and SW202 BOOT: no mainstream entry (SW_SPST_B3 is another switch); not polarized
+^[CRL]_0[468]0[2358]_,0,,,no,chip passives (C/R 0402/0603/0805; FB301 on L_0603): not polarized

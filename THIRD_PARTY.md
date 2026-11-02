@@ -25,6 +25,20 @@ The release firmware image links ESP-IDF, mbedTLS, lwIP and FreeRTOS; their lice
 libssh's `COPYING` and `BSD`, and these notices as plain text ship in the `licenses/` folder of
 each firmware zip.
 
+## Add-on board (hardware/)
+
+The board's design files are CC BY-NC-SA 4.0, non-commercial ([`hardware/LICENSE`](hardware/LICENSE)); the
+scripts in `hardware/tools/` are GPL-3.0-only, as the rest of the project's code.
+
+| Component | Where | License | Notes |
+|---|---|---|---|
+| [KiCad libraries](https://www.kicad.org/libraries/license/) (symbols, footprints, 3D models) | used by the schematic and board; KiCad's 3D models referenced by path, not bundled | CC-BY-SA-4.0 with KiCad's exception for designs | The exception covers the design and the files made from it |
+| Project footprints derived from KiCad's library: `*_EdgeTrim` copies of the module, USB-C and header footprints, and the reverse-mount LED | `hardware/ssh_runner.pretty/` | CC-BY-SA-4.0 | Modified copies of KiCad library footprints (silkscreen moved off the board edge, pads and drills adjusted). Library parts redistributed as a collection keep KiCad's license; `Pads_1x09_P1.27mm_SMD` is this project's own |
+| Flipper external-module outline and header positions | `hardware/ssh-runner.kicad_pcb` (dimensions only) | from [flipperzero-3d-models](https://github.com/flipperdevices/flipperzero-3d-models) (GPL-3.0) | The reference files are not bundled; [`hardware/ref/README.md`](hardware/ref/README.md) |
+| [Orbitron](https://github.com/google/fonts/tree/main/ofl/orbitron) Bold | outlines of the title on the board | OFL-1.1 | [`hardware/art/Orbitron-OFL.txt`](hardware/art/Orbitron-OFL.txt); the font file is not bundled |
+| The logo | `hardware/art/logo-x.svg` and its copies on the board | all rights reserved | [`hardware/art/LICENSE.md`](hardware/art/LICENSE.md): build the board unchanged, or remove the logo |
+| LCSC/EasyEDA 3D models of the USB-C, RJ45 and reverse-mount LEDs | fetched by `hardware/tools/lcsc_3d.py`, not bundled | no stated license | For local renders only |
+
 ## sshrunner (cli/)
 
 The PC tool is statically linked Go. Its modules (all MIT, BSD-3-Clause or Apache-2.0, so

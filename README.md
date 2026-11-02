@@ -112,8 +112,8 @@ the Flipper is coming in a later release.
 </tr>
 </table>
 
-<p align="center">SSH Runner rev 0.1, the custom add-on PCB: bring-up in progress; design files
-will be published with v0.3.0.</p>
+<p align="center">SSH Runner rev 0.1, the custom add-on PCB: <a href="hardware/README.md">design files,
+how to order, and errata</a>.</p>
 
 ## Installation
 
@@ -227,8 +227,16 @@ a bug, run the checks and send a change.
 
 ## License
 
-[GPL-3.0-only](LICENSE). Third-party components and their licenses:
-[THIRD_PARTY.md](THIRD_PARTY.md).
+The firmware, the Flipper app, the PC tool and the scripts in `hardware/tools/` are
+[GPL-3.0-only](LICENSE).
+
+The hardware design in `hardware/` is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+([`hardware/LICENSE`](hardware/LICENSE)). Commercial use of the hardware design or any derivative
+works is not permitted without explicit permission from the author. For commercial licensing,
+contact: scx@gapp.nthu.edu.tw
+
+Third-party components and their licenses: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Acknowledgments
 

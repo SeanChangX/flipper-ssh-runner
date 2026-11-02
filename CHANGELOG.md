@@ -14,6 +14,9 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ### Added
 
+- The SSH Runner add-on board's design, rev 0.1 ([`hardware/`](hardware/README.md)): KiCad 10
+  sources, JLCPCB fabrication files, design notes, bring-up results and errata. Source-available,
+  non-commercial: CC BY-NC-SA 4.0.
 - A status LED on the board: one short flash at boot, a slow blink while a link or an SSH
   session comes up, on for a second when a link is up, a double flash while an SSH session is
   open, and fast flashes on an error ([Hardware and Wiring](docs/HARDWARE.md#status-led)). The
