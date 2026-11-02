@@ -357,6 +357,12 @@ static void on_request(const LinkRequest* r, void* ctx) {
         link_reply_error(ProtoErrBusy, "protecting secrets");
         return;
     }
+    if(link_request_obsolete(r->type)) {
+        /* apps from before the legacy key's removal ask once per run; "not found" is what
+         * they expect from a board without one */
+        link_reply_error(ProtoErrNotFound, "no legacy key");
+        return;
+    }
     switch(r->type) {
     case PROTO_T_HELLO:
         ESP_LOGI(TAG, "HELLO from %s (proto v%u)", r->hello.version, r->hello.proto_version);
@@ -494,17 +500,6 @@ static void on_request(const LinkRequest* r, void* ctx) {
     case PROTO_T_KEY_GEN:
         reply_err(ssh_client_keygen(&r->key_gen, &link_sink), "session busy");
         break;
-    case PROTO_T_KEY_LEGACY_EXPORT:
-        reply_err(ssh_client_legacy_export(&link_sink), "no legacy key");
-        break;
-    case PROTO_T_KEY_LEGACY_DELETE: {
-        esp_err_t err = keystore_legacy_delete(r->legacy_delete.crc32);
-        if(err == ESP_ERR_INVALID_ARG)
-            link_reply_error(ProtoErrBadPayload, "CRC does not match the key");
-        else
-            reply_err(err, "no legacy key");
-        break;
-    }
     case PROTO_T_SECRET_FORGET:
         if(r->forget.kind == ProtoForgetPassphrase || r->forget.kind == ProtoForgetUnlocked) {
             if(r->forget.kind == ProtoForgetPassphrase) keystore_pass_forget(r->forget.id);

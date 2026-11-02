@@ -2,11 +2,11 @@
 #include "keystore.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "esp_log.h"
-#include "libssh/libssh.h"
 #include "keystore_i.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -99,67 +99,6 @@ esp_err_t keystore_init(void) {
     if(err != ESP_OK) return err;
 #endif
     return keystore_sec_boot();
-}
-
-/* ---------------- legacy device key (v0, migrated to the SD card) ---------------- */
-
-/* The v0 firmware kept one Ed25519 key as an OpenSSH-format string under "ed25519". */
-char* keystore_legacy_get(void) {
-    nvs_handle_t h;
-    if(nvs_open_from_partition(keystore_part(), KS_NS, NVS_READONLY, &h) != ESP_OK) return NULL;
-    size_t n = 0;
-    char* pem = NULL;
-    if(nvs_get_str(h, "ed25519", NULL, &n) == ESP_OK && n > 1) {
-        pem = malloc(n);
-        if(pem && nvs_get_str(h, "ed25519", pem, &n) != ESP_OK) {
-            memset(pem, 0, n);
-            free(pem);
-            pem = NULL;
-        }
-    }
-    nvs_close(h);
-    return pem;
-}
-
-bool keystore_legacy_exists(void) {
-    nvs_handle_t h;
-    if(nvs_open_from_partition(keystore_part(), KS_NS, NVS_READONLY, &h) != ESP_OK) return false;
-    size_t n = 0;
-    bool ok = nvs_get_str(h, "ed25519", NULL, &n) == ESP_OK && n > 1;
-    nvs_close(h);
-    return ok;
-}
-
-esp_err_t keystore_legacy_delete(uint32_t crc32) {
-    char* pem = keystore_legacy_get();
-    if(!pem) return ESP_ERR_NOT_FOUND;
-    size_t n = strlen(pem);
-    bool same = proto_crc32((const uint8_t*)pem, n, 0) == crc32;
-    memset(pem, 0, n);
-    free(pem);
-    if(!same) return ESP_ERR_INVALID_ARG; /* the Flipper does not hold this exact key */
-    ESP_LOGI(TAG, "legacy key deleted after export");
-    return key_erase("ed25519");
-}
-
-esp_err_t keystore_legacy_generate(void) {
-    ssh_key key = NULL;
-    if(ssh_pki_generate(SSH_KEYTYPE_ED25519, 0, &key) != SSH_OK) return ESP_FAIL;
-    char* b64 = NULL;
-    esp_err_t err = ESP_FAIL;
-    if(ssh_pki_export_privkey_base64(key, NULL, NULL, NULL, &b64) == SSH_OK) {
-        nvs_handle_t h;
-        err = nvs_open_from_partition(keystore_part(), KS_NS, NVS_READWRITE, &h);
-        if(err == ESP_OK) {
-            err = nvs_set_str(h, "ed25519", b64);
-            if(err == ESP_OK) err = nvs_commit(h);
-            nvs_close(h);
-        }
-        memset(b64, 0, strlen(b64));
-        ssh_string_free_char(b64);
-    }
-    ssh_key_free(key);
-    return err;
 }
 
 /* ---------------- key passphrases ("decrypt once", by key id) ---------------- */

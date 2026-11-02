@@ -263,8 +263,8 @@ F ◀─ SSH_STATE_EVT(ready) ──── E
 ### Keys and Secrets
 
 Key files live on the Flipper's SD card (`keys/`). A private key crosses the link only
-while E needs it: staged for one connect, or sent back once when E generates or exports
-it. Neither side logs it.
+while E needs it: staged for one connect, or sent back once when E generates it. Neither
+side logs it.
 
 | Type | Name | Dir | Payload | Answer |
 |---|---|---|---|---|
@@ -274,15 +274,15 @@ it. Neither side logs it.
 | 0x46 | `KEY_PASSPHRASE` | F→E | `passphrase:str, remember:u8` | `ACK` / `ERROR(state)` |
 | 0x47 | `KEY_PUB_EVT` | E→F | `status:u8, fp:str, total:u16, offset:u16, data` | `ACK` |
 | 0x40 | `KEY_GEN` | F→E | `key_type:u8` (0 = Ed25519, 1 = ECDSA P-256), `passphrase:str` | `ACK`, then blob + `KEY_PUB_EVT` |
-| 0x48 | `KEY_LEGACY_EXPORT` | F→E | — (pre-release migration only) | `ACK`, then blob + `KEY_PUB_EVT`; `ERROR(not found)` |
-| 0x49 | `KEY_LEGACY_DELETE` | F→E | `crc32:u32` of the exported file (pre-release migration only) | `ACK` / `ERROR` |
+| 0x48 | `KEY_LEGACY_EXPORT` (reserved) | F→E | any (ignored) | `ERROR(not found)` |
+| 0x49 | `KEY_LEGACY_DELETE` (reserved) | F→E | any (ignored) | `ERROR(not found)` |
 | 0x42 | `SECRET_FORGET` | F→E | `kind:u8, id:str` | `ACK` |
 
 - **Staging** (F→E `KEY_BLOB_*` right before `SSH_CONNECT` with auth = 1): E keeps the
   file in one static internal-RAM buffer and zeroes it after parsing, on any error, on
   `CANCEL`, on `SSH_CONNECT` with password auth, when a new app says `HELLO` or the
   Flipper goes silent, and 30 s after `KEY_BLOB_END` without a connect.
-- **E→F blob** (generated or exported key, ≤ 4096 bytes): the same three messages as
+- **E→F blob** (a generated key, ≤ 4096 bytes): the same three messages as
   events; F writes the file, reads it back and compares the CRC. Then `KEY_PUB_EVT`.
 - `KEY_PUB_EVT` carries the public key line (`<type> <base64> ssh_runner`) in pieces of
   ≤ 443 bytes (`offset` / `total`, up to 2048), with its fingerprint. `status` ≠ 0 is a
@@ -290,12 +290,6 @@ it. Neither side logs it.
 - A passphrase given with `KEY_GEN` or accepted with `remember = 1` is stored in E's NVS
   by key id ("decrypt once"); a stored one that stops working is erased and asked for
   again.
-- **Migration of a pre-release device key** (boards that ran firmware from before the first
-  release; a board with released firmware has none, and E answers `ERROR(not found)`): F
-  sends `KEY_LEGACY_EXPORT` once per run after the
-  link comes up; with a key, it writes `keys/flipper` (`flipper-1`… if taken), and only
-  after the read-back matches sends `KEY_LEGACY_DELETE` with the file's CRC. E deletes
-  only if the CRC is that of its key.
 - `SECRET_FORGET`: kind 0 = a profile (remembered password and pinned host keys; sent
   when a host is deleted or renamed), kind 1 = a key passphrase (`id` = key id) and its
   unlocked copy in RAM, kind 2 = only the unlocked copy ("lock"; sent when a key is renamed).
@@ -303,6 +297,11 @@ it. Neither side logs it.
   until kind 1/2 above or a restart): a later connect with that key needs no passphrase and
   skips the KDF.
 - `0x41 KEY_GET_PUB` and `0xC1 KEY_PUB_RESP` (v0) are gone; `0x41` is unassigned.
+- `0x48` and `0x49` exported and deleted a device key that pre-release firmware kept in E's
+  NVS; no released firmware has one. Both numbers are reserved and never reused. Apps from
+  before their removal still send `KEY_LEGACY_EXPORT` once per run and read `ERROR(not found)`
+  as "nothing to move", so E keeps answering both with `ERROR(not found)`, whatever the
+  payload; current apps send neither.
 
 ### Security
 

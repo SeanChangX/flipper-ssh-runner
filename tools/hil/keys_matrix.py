@@ -9,15 +9,15 @@ Before: the test sshd runs (tools/hil/README.md) and tools/hil/target/local.env 
 Test keys and passphrases are generated fresh into .cache/hil/keys (git-ignored) with
 ssh-keygen and never committed; their public keys are appended to the container's
 authorized_keys, which goes away with the --rm container. The ESP32 console prints
-generated private keys (keygen, legacy export): test keys only.
+generated private keys (keygen): test keys only.
 
 What it checks: every type and format, with and without a
 passphrase; wrong passphrase re-prompts; a remembered passphrase connects silently and
 prompts again after forgetting it; public-only, too short, DSA and unknown files are
 refused before any TCP connection; a key the host does not know is offered once and
 never followed by another key or a password; RSA signs with rsa-sha2-* only; the staging
-buffer reads back as zeros after every attempt; generated and legacy keys work; N key
-connects without heap growth.
+buffer reads back as zeros after every attempt; generated keys work; N key connects
+without heap growth.
 
 SPDX-License-Identifier: GPL-3.0-only
 """
@@ -375,31 +375,6 @@ class Matrix:
             self.record(name, ok, f"{state} in {dt:.1f} s, encrypted {enc}, remembered at generation")
             self.bye()
 
-    def legacy(self) -> None:
-        out = self.con.send("legacy export", r"\[key\] (fp \S+|failed[^\n]*)|legacy export: \S+", 30)
-        if "ESP_ERR_NOT_FOUND" in out:
-            self.record("legacy-export", True, "no v0 key on this board (already migrated)")
-            return
-        m = re.search(r"\[key\] file (\d+) bytes crc (\S+)\n([\s\S]*?)\[key\] pub ([^\n]+)\n\[key\] fp (\S+)", out)
-        if not m:
-            self.record("legacy-export", False, out[-120:].replace("\n", " | "))
-            return
-        pem = m.group(3).encode()[: int(m.group(1))]
-        crc = m.group(2)
-        pub = m.group(4).strip()
-        # the board's real v0 key: kept locally (git-ignored) in case a migration goes wrong
-        (KEYS / "legacy-backup").write_bytes(pem)
-        self.sshd.authorize([pub])
-        self.con.stage(pem)
-        state, sout, dt = self.connect("k-legacy", m.group(5))
-        self.record("legacy-export", state == "ready", f"exported key connects: {state}")
-        self.bye()
-        wrong = self.con.send("legacy delete 0x1", r"legacy delete: \S+")
-        still = self.con.send("legacy export", r"\[key\] (fp \S+|failed[^\n]*)|legacy export: \S+", 30)
-        # deleting with the right CRC is the Flipper's migration (device walk), not done here
-        ok = "ESP_ERR_INVALID_ARG" in wrong and crc in still
-        self.record("legacy-delete-guard", ok, f"wrong CRC refused, key still there (right CRC {crc} not sent)")
-
     def unlocked(self, c: Case, cycles: int) -> None:
         """Agent-like cache: after one unlock an encrypted key connects without the bcrypt
         cost until it is forgotten, locked or the board restarts."""
@@ -473,7 +448,7 @@ class Matrix:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", default="COM8")
-    ap.add_argument("--only", nargs="*", help="case names (or: refusals wrong want-pub generated legacy cycles unlocked fallback)")
+    ap.add_argument("--only", nargs="*", help="case names (or: refusals wrong want-pub generated cycles unlocked fallback)")
     ap.add_argument("--cycles", type=int, default=100)
     args = ap.parse_args()
     env = read_env()
@@ -498,8 +473,6 @@ def main() -> int:
         m.refusals()
     if not want or "generated" in want:
         m.generated()
-    if not want or "legacy" in want:
-        m.legacy()
     if not want or "cycles" in want:
         m.cycles(args.cycles)
     if not want or "unlocked" in want:
