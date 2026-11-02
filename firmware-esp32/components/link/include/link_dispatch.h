@@ -40,13 +40,8 @@ typedef struct {
 
 /* Decode a reliable F->E frame. Returns ProtoErrNone, ProtoErrUnknownType or
  * ProtoErrBadPayload. Payload pointers inside `out` (script chunk data) point
- * into `payload`. The reserved KEY_LEGACY_* numbers decode with any payload: see
- * link_request_obsolete(). */
+ * into `payload`. */
 uint16_t link_decode_request(uint8_t type, const uint8_t* payload, size_t len, LinkRequest* out);
-
-/* A request that older apps still send but that no longer does anything (KEY_LEGACY_EXPORT,
- * KEY_LEGACY_DELETE): the ESP32 answers it ERROR not found, as when there was nothing to do. */
-bool link_request_obsolete(uint8_t type);
 
 /* HELLO: pick min(ours, theirs) from the supported rates. */
 uint32_t link_choose_baud(uint32_t peer_max, uint32_t our_max);

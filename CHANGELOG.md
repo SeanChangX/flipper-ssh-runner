@@ -40,7 +40,9 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 ### Removed
 
 - The pre-release v0 device key (one key kept in the ESP32's NVS) and its one-time migration
-  to the SD card; boards still answer the old requests, so older apps keep working.
+  to the SD card, with both of its requests. Older apps still ask once per run; the board
+  answers as for any unknown request, an error those apps take as "nothing to move", so they
+  keep working.
 
 ## [0.2.1] - 2026-10-26
 

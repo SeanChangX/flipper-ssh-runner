@@ -838,10 +838,6 @@ const char* proto_type_name(uint8_t type) {
         return "KEY_PASSPHRASE";
     case PROTO_T_KEY_PUB_EVT:
         return "KEY_PUB_EVT";
-    case PROTO_T_KEY_LEGACY_EXPORT_RESERVED:
-        return "KEY_LEGACY_EXPORT (obsolete)";
-    case PROTO_T_KEY_LEGACY_DELETE_RESERVED:
-        return "KEY_LEGACY_DELETE (obsolete)";
     case PROTO_T_SEC_GET_STATUS:
         return "SEC_GET_STATUS";
     case PROTO_T_SEC_ENABLE:

@@ -86,20 +86,12 @@ uint16_t link_decode_request(uint8_t type, const uint8_t* p, size_t len, LinkReq
     case PROTO_T_KEY_PASSPHRASE:
         ok = proto_dec_key_passphrase(p, len, &out->passphrase);
         break;
-    case PROTO_T_KEY_LEGACY_EXPORT_RESERVED:
-    case PROTO_T_KEY_LEGACY_DELETE_RESERVED:
-        ok = true; /* obsolete: the payload is ignored, the answer is always "not found" */
-        break;
     default:
         return ProtoErrUnknownType; /* includes the reserved SHELL_* types in v0 */
     }
     return ok ? ProtoErrNone : ProtoErrBadPayload;
 }
 
-bool link_request_obsolete(uint8_t type) {
-    return type == PROTO_T_KEY_LEGACY_EXPORT_RESERVED ||
-           type == PROTO_T_KEY_LEGACY_DELETE_RESERVED;
-}
 
 uint32_t link_choose_baud(uint32_t peer_max, uint32_t our_max) {
     static const uint32_t rates[] = {921600, 460800, 230400, 115200};
