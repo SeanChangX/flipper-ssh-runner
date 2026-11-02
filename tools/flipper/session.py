@@ -215,10 +215,13 @@ def print_diff(diff: dict[str, list]) -> None:
 def close_app(r: FlipperRpc) -> bool:
     """Close a still-running app with Back presses (the RPC app_exit does not close a FAP
     that ignores it); Right once in case an editor asks "Discard Changes?". True if closed."""
+    from . import ui
+
     for i in range(12):
         if not r.app_locked():
             return True
-        if i == 8:
+        # never Right on Settings > Security: it leads to Protect (an eFuse burn); Back is safe
+        if i == 8 and not ui.on_security(r.screenshot()):
             r.input("right")
             time.sleep(0.5)
         r.input("back")
