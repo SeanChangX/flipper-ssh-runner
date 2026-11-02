@@ -44,8 +44,7 @@ keyboard and screen. Pick a host, authenticate, run a command or a script, and r
 </p>
 
 Every screen below is from the app's [demo mode](flipper-app/README.md#without-the-board)
-(simulated board, example data), at 4× the Flipper's 128×64 screen. Settings > Developer
-appears only with the Flipper's Settings > System > Debug on.
+(simulated board, example data), at 4× the Flipper's 128×64 screen.
 
 <table>
 <tr>
@@ -65,7 +64,7 @@ appears only with the Flipper's Settings > System > Debug on.
 </tr>
 <tr>
 <td><img src="docs/screenshots/k08-key-card.png" alt="Key card for id_ed25519: Ed25519, default key, encrypted, SHA256 fingerprint"><br><sub><b>Key details:</b> type, passphrase, fingerprint</sub></td>
-<td><img src="docs/screenshots/x01-settings-restore-examples.png" alt="Settings menu with Developer, Security and Restore Examples"><br><sub><b>Settings:</b> restore the built-in examples</sub></td>
+<td><img src="docs/screenshots/x01-settings-restore-examples.png" alt="Settings menu with Developer, Security and Restore Examples"><br><sub><b>Settings:</b> restore the built-in examples; Developer appears only with the Flipper's Settings > System > Debug on</sub></td>
 <td><img src="docs/screenshots/s02-protect-confirm.png" alt="Protect Secrets? warning: cannot be undone, burns a key into the ESP32, updates still work"><br><sub><b>Security:</b> optional secret protection</sub></td>
 </tr>
 </table>
