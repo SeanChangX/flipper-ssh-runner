@@ -29,6 +29,11 @@ CONFIG_LWIP_IPV6=y
 # SPI keep their timing.
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 
+# Compiler: -O2 (performance), as release firmware is built; the IDF default is -Og, a debug
+# setting. SSH handshakes are crypto-bound and the app has room (about 1.3 of 3 MB). Assertions
+# stay on (the IDF default).
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
 # Tasks
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 CONFIG_FREERTOS_HZ=1000
