@@ -50,14 +50,27 @@ static void test_decode_requests(void) {
     n = proto_enc_key_gen(&g, buf, sizeof(buf));
     TT_EQ_INT(link_decode_request(PROTO_T_KEY_GEN, buf, n, &r), ProtoErrBadPayload);
 
-    /* Keys: KEY_GET_PUB (v0) is gone; forget takes a kind; legacy export is empty */
+    /* Keys: KEY_GET_PUB (v0) is gone; forget takes a kind */
     TT_EQ_INT(link_decode_request(0x41, NULL, 0, &r), ProtoErrUnknownType);
     ProtoSecretForget f = {.kind = ProtoForgetPassphrase};
     strcpy(f.id, "SHA256:abc");
     n = proto_enc_secret_forget(&f, buf, sizeof(buf));
     TT_EQ_INT(link_decode_request(PROTO_T_SECRET_FORGET, buf, n, &r), ProtoErrNone);
     TT_EQ_INT(r.forget.kind, ProtoForgetPassphrase);
-    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_EXPORT, NULL, 0, &r), ProtoErrNone);
+    TT_CHECK(!link_request_obsolete(PROTO_T_SECRET_FORGET));
+    /* The reserved KEY_LEGACY_* requests of older apps decode with any payload and are
+     * answered as obsolete (ERROR not found) */
+    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_EXPORT_RESERVED, NULL, 0, &r), ProtoErrNone);
+    TT_CHECK(link_request_obsolete(r.type));
+    static const uint8_t crc[] = {0x26, 0x39, 0xF4, 0xCB}; /* the CRC payload old apps send */
+    TT_EQ_INT(
+        link_decode_request(PROTO_T_KEY_LEGACY_DELETE_RESERVED, crc, sizeof(crc), &r),
+        ProtoErrNone);
+    TT_CHECK(link_request_obsolete(r.type));
+    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_DELETE_RESERVED, NULL, 0, &r), ProtoErrNone);
+    TT_CHECK(link_request_obsolete(r.type));
+    TT_EQ_INT(link_decode_request(PROTO_T_KEY_LEGACY_EXPORT_RESERVED, crc, 1, &r), ProtoErrNone);
+    TT_CHECK(link_request_obsolete(r.type));
     ProtoKeyBlobBegin kb = {.total = PROTO_KEY_MAX + 1};
     n = proto_enc_key_blob_begin(&kb, buf, sizeof(buf));
     TT_EQ_INT(link_decode_request(PROTO_T_KEY_BLOB_BEGIN, buf, n, &r), ProtoErrBadPayload);

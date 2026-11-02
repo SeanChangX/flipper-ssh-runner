@@ -24,6 +24,11 @@ CONFIG_ETH_SPI_ETHERNET_W5500=y
 CONFIG_LWIP_SO_REUSE=y
 CONFIG_LWIP_IPV6=y
 
+# CPU at 240 MHz, the S3's maximum (the IDF default is 160): SSH handshakes, RSA above all,
+# are CPU-bound. A fixed clock, no dynamic frequency scaling: the Flipper UART and the W5500
+# SPI keep their timing.
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+
 # Tasks
 CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
 CONFIG_FREERTOS_HZ=1000

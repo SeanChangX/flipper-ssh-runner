@@ -274,7 +274,7 @@ static void test_misc_codecs(void) {
     TT_EQ_INT(px.reason, ProtoReasonBadPassphrase);
 }
 
-/* Keys: key file staging, passphrase answer, public key pieces, forget, legacy delete. */
+/* Keys: key file staging, passphrase answer, public key pieces, forget. */
 static void test_keys(void) {
     ProtoKeyBlobBegin bb = {.total = PROTO_KEY_MAX}, bc;
     size_t n = proto_enc_key_blob_begin(&bb, buf, sizeof(buf));
@@ -359,14 +359,11 @@ static void test_keys(void) {
     n = proto_enc_secret_forget(&f, buf, sizeof(buf));
     TT_CHECK(!proto_dec_secret_forget(buf, n, &e));
 
-    ProtoKeyLegacyDelete d = {.crc32 = 0xCBF43926u}, d2;
-    n = proto_enc_key_legacy_delete(&d, buf, sizeof(buf));
-    TT_CHECK(proto_dec_key_legacy_delete(buf, n, &d2));
-    TT_EQ_INT(d2.crc32, 0xCBF43926u);
-    CHECK_PREFIXES(proto_dec_key_legacy_delete, ProtoKeyLegacyDelete, buf, n);
-
     TT_EQ_STR(proto_type_name(PROTO_T_KEY_BLOB_CHUNK), "KEY_BLOB_CHUNK");
     TT_EQ_STR(proto_type_name(0x41), "?"); /* KEY_GET_PUB is gone */
+    /* the two pre-release legacy-key requests stay named in logs: their numbers are reserved */
+    TT_EQ_STR(proto_type_name(0x48), "KEY_LEGACY_EXPORT (obsolete)");
+    TT_EQ_STR(proto_type_name(0x49), "KEY_LEGACY_DELETE (obsolete)");
 }
 
 static void test_misc_codecs_rest(void) {
