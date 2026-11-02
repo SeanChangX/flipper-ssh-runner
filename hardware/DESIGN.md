@@ -29,19 +29,34 @@ ESP32's antenna away from the Flipper's electronics and leaves room for the RJ45
 
 ## 3. Block Diagram
 
-```
- Flipper GPIO (18-pin, 2.54 mm)                       USB-C (flash / debug / bench power)
-   pin 9  3V3 ──────────────────┐                      VBUS ── 3.3 V LDO ──┐
-   pin 1  5V  ── (DNP fallback) ┘                                            │
-                                 ▼                                           ▼
-                        ┌───────────────────── power mux (TPS2116) ─────────────┐
-                        │  reverse-current blocking on both inputs, soft start   │
-                        └──────────────────────────── 3V3 rail ──────────────────┘
-                                                       │
-   pin 13 TX ──R── GPIO18 (UART1 RX)          ┌────────┴─────────┐
-   pin 14 RX ──R── GPIO17 (UART1 TX)          │ ESP32-S3-WROOM-1 │── GPIO19/20 ── USB-C D-/D+ (ESD)
-   pin 8/11/18 GND                            │      N16R8       │── SPI ── W5500 ── RJ45 magjack
-   pin 15/16 ── DNP 0R ── EN / GPIO0          └──────────────────┘── Qwiic, spare GPIO, test pad
+```mermaid
+flowchart LR
+    subgraph FLIPPER["Flipper GPIO header (18 pins, 2.54 mm)"]
+        P9["Pin 9: 3V3"]
+        P1["Pin 1: 5V"]
+        P1314["Pins 13/14: TX/RX"]
+        P1516["Pins 15/16: PC1/PC0"]
+        PGND["Pins 8/11/18: GND"]
+    end
+    USBC["USB-C"]
+    LDO["3.3 V LDO<br/>TLV75733P"]
+    MUX["Power mux TPS2116<br/>reverse-current blocking<br/>on both inputs, soft start"]
+    ESP["ESP32-S3-WROOM-1-N16R8"]
+    W5500["W5500"]
+    RJ45["RJ45 magjack"]
+    EXP["Qwiic, spare GPIO,<br/>test pad"]
+
+    USBC -->|"VBUS"| LDO
+    P1 -.->|"DNP fallback"| LDO
+    LDO -->|"VIN1, priority"| MUX
+    P9 -->|"VIN2"| MUX
+    MUX -->|"3V3 rail"| ESP
+    P1314 <-->|"1k series: pin 13 to GPIO18 (UART1 RX), pin 14 from GPIO17 (UART1 TX)"| ESP
+    P1516 -.->|"DNP 0R: pin 16 to EN, pin 15 to GPIO0"| ESP
+    ESP <-->|"GPIO19/20: D-/D+ via ESD array"| USBC
+    ESP <-->|"SPI"| W5500
+    W5500 <--> RJ45
+    ESP --> EXP
 ```
 
 ## 4. Electrical Design
