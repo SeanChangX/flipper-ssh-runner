@@ -19,7 +19,7 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   open, and fast flashes on an error ([Hardware and Wiring](docs/HARDWARE.md#status-led)). The
   console's `led off` turns it off.
 - The firmware's board is a Kconfig choice: the Waveshare ESP32-S3-ETH (the default) or the
-  custom board SSH Runner rev 0.1. It sets the status LED's type and pin.
+  custom SSH Runner add-on board (rev 0.1 and later). It sets the status LED's type and pin.
 
 ### Changed
 
@@ -27,6 +27,11 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   all.
 - The board's USB console log leaves out the WiFi driver's start-up details; its warnings and
   errors still show.
+- The release files have a new layout: a firmware zip per board, named for it (`waveshare` for
+  the Waveshare ESP32-S3-ETH, `addon` for the SSH Runner add-on board, rev 0.1 and later), each
+  with a factory image for a first install (at `0x0`) and an app image for updates (at
+  `0x20000`) instead of three parts; the licenses are in a `licenses/` folder in the firmware
+  zips and the PC tool's archives.
 
 ### Removed
 

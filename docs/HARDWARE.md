@@ -50,10 +50,9 @@ One LED with the usual single-LED patterns, at a low duty cycle (on the custom b
 the Flipper's battery). Which LED depends on the board, a Kconfig choice (`idf.py menuconfig` >
 *SSH Runner* > *Board*):
 
-- **Waveshare ESP32-S3-ETH** (the default, and the release firmware): the WS2812 on GPIO21,
-  shown dim red.
-- **SSH Runner rev 0.1** (the custom board; build with `sdkconfig.rev0_1`): the green LED D201
-  on GPIO21, lit when the pin is high.
+- **Waveshare ESP32-S3-ETH** (the default): the WS2812 on GPIO21, shown dim red.
+- **SSH Runner add-on**, rev 0.1 and later (the custom board; build with `sdkconfig.addon`): the
+  green LED D201 on GPIO21, lit when the pin is high.
 
 *SSH Runner* > *Status LED* can turn it off for good. The RJ45 LEDs are the W5500's own.
 

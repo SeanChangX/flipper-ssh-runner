@@ -2,7 +2,7 @@ menu "SSH Runner"
 
     # The board sets what differs between the boards; everything else is the same on both
     # (W5500 SPI, INT and RST, the UART to the Flipper, flash and PSRAM: checked against the
-    # rev 0.1 netlist). No default that silently works on one board and not the other.
+    # add-on board's rev 0.1 netlist). No default that silently works on one board and not the other.
     choice FES_BOARD
         prompt "Board"
         default FES_BOARD_WAVESHARE_S3_ETH
@@ -10,14 +10,16 @@ menu "SSH Runner"
             The board this firmware runs on. It sets the status LED's type and pin.
         config FES_BOARD_WAVESHARE_S3_ETH
             bool "Waveshare ESP32-S3-ETH (prototype)"
-        config FES_BOARD_SSH_RUNNER_REV0_1
-            bool "SSH Runner rev 0.1"
+        # The add-on board by name, not revision: rev 0.1 and later share its pins and LED. A
+        # later revision that needs different firmware gets a choice of its own.
+        config FES_BOARD_SSH_RUNNER_ADDON
+            bool "SSH Runner add-on (rev 0.1 and later)"
     endchoice
 
     config FES_BOARD_NAME
         string
         default "Waveshare ESP32-S3-ETH" if FES_BOARD_WAVESHARE_S3_ETH
-        default "SSH Runner rev 0.1" if FES_BOARD_SSH_RUNNER_REV0_1
+        default "SSH Runner add-on" if FES_BOARD_SSH_RUNNER_ADDON
 
     menu "LAN (W5500)"
         config FES_LAN_ENABLE
@@ -25,7 +27,7 @@ menu "SSH Runner"
             default y
 
         # Defaults = Waveshare ESP32-S3-ETH, confirmed against the wiki's ETH_DHCP pin table and
-        # the schematic (docs/HARDWARE.md). SSH Runner rev 0.1 uses the same pins.
+        # the schematic (docs/HARDWARE.md). The SSH Runner add-on uses the same pins.
         config FES_W5500_SPI_HOST
             int "SPI host (2 = SPI2)"
             default 2
@@ -100,7 +102,7 @@ menu "SSH Runner"
     menu "Status LED"
         # Type and pin come from the board, never from a separate choice:
         #   Waveshare ESP32-S3-ETH: the WS2812 RGB LED on GPIO21, shown dim red;
-        #   SSH Runner rev 0.1: D201 (green) on GPIO21 through R203 to its anode, cathode to
+        #   SSH Runner add-on: D201 (green) on GPIO21 through R203 to its anode, cathode to
         #   GND, so lit when the GPIO is high.
         config FES_STATUS_LED
             bool "Use the board's status LED"
@@ -114,7 +116,7 @@ menu "SSH Runner"
             default y if FES_STATUS_LED && FES_BOARD_WAVESHARE_S3_ETH
         config FES_STATUS_LED_GPIO_PIN
             bool
-            default y if FES_STATUS_LED && FES_BOARD_SSH_RUNNER_REV0_1
+            default y if FES_STATUS_LED && FES_BOARD_SSH_RUNNER_ADDON
         config FES_STATUS_LED_GPIO
             int
             default 21

@@ -33,6 +33,7 @@ SSH commands from the Flipper. Start with the Quick Start; the rest is reference
 |---|---|
 | [Changelog](../CHANGELOG.md) | Changes in each release |
 | [Contributing](../CONTRIBUTING.md) | Reporting bugs, running the checks, sending a change |
+| [Releasing](RELEASING.md) | Cutting a release, its files, verifying them, the Flipper Apps Catalog |
 | [Hardware-in-the-Loop Tests](../tools/hil/README.md) | Test scripts that drive the board from a computer |
 | [Third-Party Components](../THIRD_PARTY.md) | Bundled and linked components and their licenses |
 | [License](../LICENSE) | GPL-3.0-only |

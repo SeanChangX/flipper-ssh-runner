@@ -21,8 +21,9 @@ GPL-3.0 firmware image, which LGPL-2.1 section 3 allows).
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | embedded in `docs/media/cli/*.svg` (by freeze) | OFL-1.1 | The font of the PC tool figures |
 | [freeze](https://github.com/charmbracelet/freeze) v0.2.2 (Charm) | fetched by `tools/cli_figures.py`, not bundled | MIT | Draws the PC tool figures |
 
-The release firmware image links ESP-IDF, mbedTLS, lwIP and FreeRTOS; their license texts
-ship next to it in the firmware release archive.
+The release firmware image links ESP-IDF, mbedTLS, lwIP and FreeRTOS; their license texts,
+libssh's `COPYING` and `BSD`, and these notices as plain text ship in the `licenses/` folder of
+each firmware zip.
 
 ## sshrunner (cli/)
 
@@ -35,6 +36,7 @@ compatible with GPL-3.0) are listed with their versions in `cli/go.sum`; the mai
 | [go.bug.st/serial](https://github.com/bugst/go-serial) | BSD-3-Clause |
 | [golang.org/x/crypto, x/sys, x/text](https://pkg.go.dev/golang.org/x) (tests and terminal support) | BSD-3-Clause |
 
-Each release archive carries the license of every module linked into the binary
-(`third_party/`, collected by `cli/scripts/licenses.sh`). `github.com/mattn/go-localereader`
-ships no license file; its README states MIT.
+Each release archive carries the license of the Go standard library and of every module
+linked into the binary in one file, `licenses/THIRD_PARTY_NOTICES.txt` (written by
+`cli/scripts/archive_files.sh`). `github.com/mattn/go-localereader` ships no license file; its
+README states MIT.

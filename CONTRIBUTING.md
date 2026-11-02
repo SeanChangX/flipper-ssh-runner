@@ -64,6 +64,7 @@ A pull request is ready to merge when the checks pass.
   Edit `proto/`, then run `python tools/sync_proto.py`; the checks fail if the copy differs.
   A protocol change also updates [docs/PROTOCOL.md](docs/PROTOCOL.md).
 - A change users notice gets a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
+  Cutting a release from it: [Releasing](docs/RELEASING.md).
 - A change to a screen updates its screenshots in `docs/screenshots/` (the walks in
   `tools/flipper/walks.py`, run in demo mode) and, if they change, the README images
   (`python tools/readme_media.py`).

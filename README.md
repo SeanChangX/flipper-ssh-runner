@@ -133,21 +133,25 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 
 ### ESP32 Firmware
 
-Unzip `flipper-ssh-runner-esp32-v<version>.zip` and connect the board's USB-C (3V3 wire
-removed). The simplest way is in the browser, with Spacehuhn's
-[ESPTool](https://esptool.spacehuhn.com/) in desktop Chrome or Edge: the three parts at
-offsets `0`, `8000` and `20000`, step by step in the
+Download the zip for your board, `flipper-ssh-runner-esp32-waveshare-v<version>.zip` (Waveshare
+ESP32-S3-ETH) or `flipper-ssh-runner-esp32-addon-v<version>.zip` (SSH Runner add-on, rev 0.1 and
+later), unzip it and connect the board's USB-C (3V3 wire removed). On a first install, erase the
+flash and write the factory image (`-factory.bin`) at `0x0`; on an update, write only the app
+image (`-app.bin`) at `0x20000`, without erasing, which keeps the board's saved WiFi network and
+trusted host keys. The simplest way is in the browser, with Spacehuhn's
+[ESPTool](https://esptool.spacehuhn.com/) in desktop Chrome or Edge, step by step in the
 [Quick Start](docs/QUICKSTART.md#in-the-browser-recommended). Or with
-[esptool](https://github.com/espressif/esptool):
+[esptool](https://github.com/espressif/esptool) (`<board>` is `waveshare` or `addon`):
 
 ```sh
-esptool.py --chip esp32s3 -p <port> write_flash @flash_args
+# first install
+esptool.py --chip esp32s3 -p <port> erase_flash
+esptool.py --chip esp32s3 -p <port> write_flash 0x0 flipper-ssh-runner-<board>-v<version>-factory.bin
+# update
+esptool.py --chip esp32s3 -p <port> write_flash 0x20000 flipper-ssh-runner-<board>-v<version>-app.bin
 ```
 
-On a first install, erase the flash first (**Erase** in the browser, or `esptool.py --chip
-esp32s3 -p <port> erase_flash`). On an update, do not erase and do not merge the parts into one
-image at offset `0x0`: flashing the three parts keeps the board's saved WiFi network and trusted
-host keys. The firmware burns no eFuses unless you enable secret protection in the app.
+The firmware burns no eFuses unless you enable secret protection in the app.
 
 ### PC Tool (optional)
 

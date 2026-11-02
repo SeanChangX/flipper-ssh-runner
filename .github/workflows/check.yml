@@ -130,7 +130,7 @@ jobs:
           idf.py -B ../.cache/build/esp32-efusetest -D SDKCONFIG=../.cache/build/esp32-efusetest/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.efusetest" build
           ccache -s
 
-  firmware-rev0_1:
+  firmware-addon:
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6 # keep equal to firmware-esp32/IDF_VERSION
     steps:
@@ -139,13 +139,13 @@ jobs:
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/ccache
-          key: ccache-firmware-rev0_1-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-${{ github.sha }}
-          restore-keys: ccache-firmware-rev0_1-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-
-      - name: Build for SSH Runner rev 0.1
+          key: ccache-firmware-addon-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-${{ github.sha }}
+          restore-keys: ccache-firmware-addon-${{ hashFiles('firmware-esp32/IDF_VERSION') }}-
+      - name: Build for the SSH Runner add-on
         shell: bash
         working-directory: firmware-esp32
         run: |
           . $IDF_PATH/export.sh
           export CCACHE_DIR=$GITHUB_WORKSPACE/.cache/ccache IDF_CCACHE_ENABLE=1 CCACHE_MAXSIZE=400M
-          idf.py -B ../.cache/build/esp32-rev0_1 -D SDKCONFIG=../.cache/build/esp32-rev0_1/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.rev0_1" build
+          idf.py -B ../.cache/build/esp32-addon -D SDKCONFIG=../.cache/build/esp32-addon/sdkconfig -D "SDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.addon" build
           ccache -s

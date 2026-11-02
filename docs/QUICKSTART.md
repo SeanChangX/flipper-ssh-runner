@@ -33,18 +33,30 @@ minutes. The files come from the project's latest release.
 
 ## 2. Flash the ESP32
 
-The same steps install the firmware the first time and update it later; only the erase step
-differs:
+Download the firmware zip for your board from the release and unzip it:
 
-- **First install** (a new board, or one that ran other firmware): erase the flash first, then
-  flash the three parts. A clean flash leaves no stale settings or partitions behind.
-- **Update** (the board already runs SSH Runner): do not erase. Flash the three parts only;
-  that keeps the board's saved WiFi network, remembered passwords and trusted host keys.
+| Board | Zip |
+|---|---|
+| Waveshare ESP32-S3-ETH | `flipper-ssh-runner-esp32-waveshare-v<version>.zip` |
+| SSH Runner add-on, rev 0.1 and later | `flipper-ssh-runner-esp32-addon-v<version>.zip` |
+
+It holds two images, named for the board (`<board>` below is `waveshare` or `addon`); you
+flash one:
+
+- **First install** (a new board, or one that ran other firmware): erase the flash, then write
+  the factory image, `flipper-ssh-runner-<board>-v<version>-factory.bin`, at `0x0`. It holds
+  the bootloader, the partition table and the app in one file, and also overwrites the
+  settings partition between them.
+- **Update** (the board already runs SSH Runner): do not erase. Write only the app image,
+  `flipper-ssh-runner-<board>-v<version>-app.bin`, at `0x20000`; that keeps the board's saved
+  WiFi network, remembered passwords and trusted host keys.
+
+Never write the factory image on an update: it erases the board's saved WiFi network,
+remembered passwords and trusted host keys like an erase does.
 
 Remove the 3V3 wire if it is fitted, then connect the board's USB-C to the computer. It
 appears as a USB serial port (USB ID `303a:1001`); the Flipper, if also connected, is
-`0483:5740`. Unzip `flipper-ssh-runner-esp32-v<version>.zip`: it holds the three firmware parts
-and `flash_args`, which lists their offsets.
+`0483:5740`.
 
 ### In the Browser (Recommended)
 
@@ -53,18 +65,15 @@ to install. It needs a desktop Chrome or Edge (it uses Web Serial).
 
 1. Open the page and click **Connect**; choose the board's port.
 2. **First install only:** click **Erase** and confirm. Skip this step when you update.
-3. Each row is an offset (the field after `0x`, in hex) and a file (**Select**). Set the rows
-   to the offsets in `flash_args`:
+3. Each row is an offset (the field after `0x`, in hex) and a file (**Select**). Use one row:
 
-   | Offset (`0x`) | File |
-   |---|---|
-   | `0` | `bootloader/bootloader.bin` |
-   | `8000` | `partition_table/partition-table.bin` |
-   | `20000` | `flipper_eth_ssh.bin` |
+   | When | Offset (`0x`) | File |
+   |---|---|---|
+   | First install | `0` | `...-factory.bin` |
+   | Update | `20000` | `...-app.bin` |
 
-   The page starts with the rows for other ESP32 chips (`1000`, `8000`, `E000`, `10000`):
-   change `1000` to `0` and `10000` to `20000`, and remove the `E000` row (a row without a file
-   is skipped).
+   The page starts with the rows `1000`, `8000`, `E000` and `10000`: set the first row's
+   offset and file, and leave the others without a file (a row without a file is skipped).
 4. Click **Program** and confirm.
 5. When it is done, unplug the board and plug it in again.
 
@@ -76,22 +85,24 @@ you plug it in again, then click **Connect** again.
 > remembered passwords and trusted host keys.
 
 Espressif's [esptool-js](https://espressif.github.io/esptool-js/) works the same way:
-**Connect**, **Erase Flash** on a first install only, the three files at `0x0`, `0x8000` and
-`0x20000` (**Add File** for each row), **Program**.
+**Connect**, **Erase Flash** on a first install only, one row with the offset and the file,
+**Program**.
 
 ### With esptool (Command Line)
 
 From the unzipped folder, with [esptool](https://github.com/espressif/esptool)
-(`pip install esptool`). First install only, erase the flash:
+(`pip install esptool`). First install: erase the flash, then write the factory image at
+`0x0`:
 
 ```sh
 esptool.py --chip esp32s3 -p <port> erase_flash
+esptool.py --chip esp32s3 -p <port> write_flash 0x0 flipper-ssh-runner-<board>-v<version>-factory.bin
 ```
 
-Then, on a first install and on every update, flash the three parts:
+Update: no erase, the app image at `0x20000`:
 
 ```sh
-esptool.py --chip esp32s3 -p <port> write_flash @flash_args
+esptool.py --chip esp32s3 -p <port> write_flash 0x20000 flipper-ssh-runner-<board>-v<version>-app.bin
 ```
 
 `<port>` is `COM5`-style on Windows, `/dev/ttyACM0`-style on Linux (better: its
@@ -99,9 +110,7 @@ esptool.py --chip esp32s3 -p <port> write_flash @flash_args
 `dialout` group, and ModemManager may probe both devices: exclude them with a udev rule
 setting `ID_MM_DEVICE_IGNORE`, or stop it.
 
-Do not merge the parts into one image at offset `0x0`: on an update that also erases the
-board's saved WiFi network, remembered passwords and trusted host keys. The image burns no
-eFuses.
+The images burn no eFuses.
 
 Building the firmware yourself instead: see [Build Outputs](ARCHITECTURE.md#build-outputs).
 
@@ -159,7 +168,8 @@ hands, erase it:
 esptool.py --chip esp32s3 -p <port> erase_flash
 ```
 
-Then flash the firmware again to reuse it. More: [SECURITY.md](SECURITY.md).
+To reuse it, flash it as a first install (the factory image at `0x0`, see
+[2. Flash the ESP32](#2-flash-the-esp32)). More: [SECURITY.md](SECURITY.md).
 
 ## See Also
 
