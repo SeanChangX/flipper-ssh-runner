@@ -24,7 +24,7 @@ No wiring: the board plugs straight onto the Flipper's GPIO header and runs from
 battery. Its USB-C is for flashing, debugging or bench power, and may stay plugged in while the
 board sits on the Flipper: a power mux runs the board from USB then and keeps the two supplies
 apart. Leave "5V on GPIO" off on the Flipper. The board is rev 0.1 and later; its design files
-are in [`hardware/`](../hardware/). On rev 0.1 the status LED (D201) is fitted by hand (erratum
+are in [`hardware/`](../hardware/README.md). On rev 0.1 the status LED (D201) is fitted by hand (erratum
 E1).
 
 ### Waveshare ESP32-S3-ETH

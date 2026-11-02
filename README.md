@@ -105,8 +105,9 @@ Every screen below is from the app's [demo mode](flipper-app/README.md#without-t
 Pin details: [Hardware and Wiring](docs/HARDWARE.md).
 
 The SSH Runner add-on board, rev 0.1, is brought up and tested. Its design files are in
-[`hardware/`](hardware/) (CERN-OHL-S-2.0), to order or build yourself; on rev 0.1 the status LED
-is a hand-fitted part (erratum E1). Its USB-C may stay plugged in while it sits on the Flipper.
+[`hardware/`](hardware/README.md) (CC BY-NC-SA 4.0: source-available, non-commercial), to order
+or build yourself; on rev 0.1 the status LED is a hand-fitted part (erratum E1). Its USB-C may
+stay plugged in while it sits on the Flipper.
 
 <table>
 <tr>
