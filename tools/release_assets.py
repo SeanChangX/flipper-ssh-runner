@@ -9,8 +9,8 @@ check: the version is the same in CHANGELOG.md, the firmware and the Flipper app
 
 assets: writes to OUT the files a release carries, and nothing else:
   ssh_runner-official.fap, ssh_runner-unleashed.fap
-  flipper-ssh-runner-esp32-vX.Y.Z.zip         the firmware for the Waveshare ESP32-S3-ETH
-  flipper-ssh-runner-esp32-rev0.1-vX.Y.Z.zip  the firmware for the SSH Runner rev 0.1 board
+  flipper-ssh-runner-esp32-waveshare-vX.Y.Z.zip  the firmware for the Waveshare ESP32-S3-ETH
+  flipper-ssh-runner-esp32-rev0.1-vX.Y.Z.zip     the firmware for the SSH Runner rev 0.1 board
                                               each: README.txt, the factory image (from 0x0, for
                                               a first install), the app image (at 0x20000, for
                                               updates) and licenses/
@@ -62,14 +62,14 @@ ZIP_TIME = (1980, 1, 1, 0, 0, 0)  # every member dated the same: the zip depends
 @dataclass(frozen=True)
 class Board:
     arg: str  # the argparse destination of its build folder
-    suffix: str  # in the file names: "" for the default board
+    tag: str  # in the file names
     name: str
     kconfig: str  # the board's option in the Kconfig choice FES_BOARD
 
 
 BOARDS = (
-    Board("esp32", "", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH"),
-    Board("esp32_rev0_1", "-rev0.1", "SSH Runner rev 0.1 board", "CONFIG_FES_BOARD_SSH_RUNNER_REV0_1"),
+    Board("esp32", "waveshare", "Waveshare ESP32-S3-ETH", "CONFIG_FES_BOARD_WAVESHARE_S3_ETH"),
+    Board("esp32_rev0_1", "rev0.1", "SSH Runner rev 0.1 board", "CONFIG_FES_BOARD_SSH_RUNNER_REV0_1"),
 )
 
 FLASH_README = """SSH Runner v{ver}: ESP32-S3 firmware for the {board}
@@ -100,7 +100,7 @@ INSTALL = """## Install
 
 **Flipper app.** Download `ssh_runner-official.fap`: it runs on the official firmware and on Unleashed. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader and open it from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only. If the Flipper reports an API mismatch or an outdated app after a firmware update, download the latest release.
 
-**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-rev0.1-v{ver}.zip` for the SSH Runner rev 0.1 board. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
+**ESP32-S3 board.** Download the zip for your board: `flipper-ssh-runner-esp32-waveshare-v{ver}.zip` for the Waveshare ESP32-S3-ETH (wired as in [Hardware and Wiring]({doc}docs/HARDWARE.md)), `flipper-ssh-runner-esp32-rev0.1-v{ver}.zip` for the SSH Runner rev 0.1 board. On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`. On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing: that keeps the board's saved WiFi and trusted host keys, which the factory image would erase. In the browser with Spacehuhn's [ESPTool](https://esptool.spacehuhn.com/) (desktop Chrome or Edge; step by step in the [Quick Start]({doc}docs/QUICKSTART.md#in-the-browser-recommended)), or with esptool (the commands are in the zip's `README.txt`). Remove the 3V3 wire before connecting the board's USB-C.
 
 **sshrunner, the PC tool** (optional): the archive for your system (`sshrunner_{ver}_<os>_<arch>`), or the `.deb` / `.rpm` on Linux. It edits the hosts, commands, keys and scripts on the Flipper over USB, with a backup first: [PC Tool]({doc}cli/README.md).
 
@@ -263,9 +263,9 @@ def check_build(esp: Path, board: Board) -> None:
 
 def firmware_zip(ver: str, out: Path, esp: Path, board: Board) -> None:
     check_build(esp, board)
-    stem = f"flipper-ssh-runner{board.suffix}-v{ver}"
+    stem = f"flipper-ssh-runner-{board.tag}-v{ver}"
     factory, app = f"{stem}-factory.bin", f"{stem}-app.bin"
-    zip_name = f"flipper-ssh-runner-esp32{board.suffix}-v{ver}"
+    zip_name = f"flipper-ssh-runner-esp32-{board.tag}-v{ver}"
     base = f"{zip_name}/"
     readme = FLASH_README.format(ver=ver, board=board.name, factory=factory, app=app, doc=f"{REPO}/blob/v{ver}/")
     with zipfile.ZipFile(out / f"{zip_name}.zip", "w") as z:

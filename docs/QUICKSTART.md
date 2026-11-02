@@ -37,18 +37,19 @@ Download the firmware zip for your board from the release and unzip it:
 
 | Board | Zip |
 |---|---|
-| Waveshare ESP32-S3-ETH | `flipper-ssh-runner-esp32-v<version>.zip` |
+| Waveshare ESP32-S3-ETH | `flipper-ssh-runner-esp32-waveshare-v<version>.zip` |
 | SSH Runner rev 0.1 | `flipper-ssh-runner-esp32-rev0.1-v<version>.zip` |
 
-It holds two images (the file names carry `-rev0.1` for the rev 0.1 board); you flash one:
+It holds two images, named for the board (`<board>` below is `waveshare` or `rev0.1`); you
+flash one:
 
 - **First install** (a new board, or one that ran other firmware): erase the flash, then write
-  the factory image, `flipper-ssh-runner-v<version>-factory.bin`, at `0x0`. It holds the
-  bootloader, the partition table and the app in one file, and also overwrites the settings
-  partition between them.
+  the factory image, `flipper-ssh-runner-<board>-v<version>-factory.bin`, at `0x0`. It holds
+  the bootloader, the partition table and the app in one file, and also overwrites the
+  settings partition between them.
 - **Update** (the board already runs SSH Runner): do not erase. Write only the app image,
-  `flipper-ssh-runner-v<version>-app.bin`, at `0x20000`; that keeps the board's saved WiFi
-  network, remembered passwords and trusted host keys.
+  `flipper-ssh-runner-<board>-v<version>-app.bin`, at `0x20000`; that keeps the board's saved
+  WiFi network, remembered passwords and trusted host keys.
 
 Never write the factory image on an update: it erases the board's saved WiFi network,
 remembered passwords and trusted host keys like an erase does.
@@ -95,17 +96,16 @@ From the unzipped folder, with [esptool](https://github.com/espressif/esptool)
 
 ```sh
 esptool.py --chip esp32s3 -p <port> erase_flash
-esptool.py --chip esp32s3 -p <port> write_flash 0x0 flipper-ssh-runner-v<version>-factory.bin
+esptool.py --chip esp32s3 -p <port> write_flash 0x0 flipper-ssh-runner-<board>-v<version>-factory.bin
 ```
 
 Update: no erase, the app image at `0x20000`:
 
 ```sh
-esptool.py --chip esp32s3 -p <port> write_flash 0x20000 flipper-ssh-runner-v<version>-app.bin
+esptool.py --chip esp32s3 -p <port> write_flash 0x20000 flipper-ssh-runner-<board>-v<version>-app.bin
 ```
 
-(For the rev 0.1 board the files are `flipper-ssh-runner-rev0.1-v<version>-factory.bin` and
-`-app.bin`.) `<port>` is `COM5`-style on Windows, `/dev/ttyACM0`-style on Linux (better: its
+`<port>` is `COM5`-style on Windows, `/dev/ttyACM0`-style on Linux (better: its
 `/dev/serial/by-id/...` name) and `/dev/cu.usbmodem*` on macOS. On Linux the port needs the
 `dialout` group, and ModemManager may probe both devices: exclude them with a udev rule
 setting `ID_MM_DEVICE_IGNORE`, or stop it.

@@ -17,7 +17,7 @@ EFUSE_OFF = "CONFIG_IDF_TARGET=\"esp32s3\"\n"
 FLASH_ARGS = ("--flash_mode dio --flash_freq 80m --flash_size 16MB\n0x0 bootloader/bootloader.bin\n"
               "0x20000 flipper_eth_ssh.bin\n0x8000 partition_table/partition-table.bin\n")
 # (board, zip name, image prefix)
-ZIPS = [(ra.BOARDS[0], f"flipper-ssh-runner-esp32-v{VER}", f"flipper-ssh-runner-v{VER}"),
+ZIPS = [(ra.BOARDS[0], f"flipper-ssh-runner-esp32-waveshare-v{VER}", f"flipper-ssh-runner-waveshare-v{VER}"),
         (ra.BOARDS[1], f"flipper-ssh-runner-esp32-rev0.1-v{VER}", f"flipper-ssh-runner-rev0.1-v{VER}")]
 LICENSES = ["LICENSE", "COPYING.libssh", "BSD.libssh", "LICENSE.esp-idf", "LICENSE.lwip", "LICENSE.freertos",
             "LICENSE.mbedtls", "THIRD_PARTY_NOTICES.txt"]
@@ -59,7 +59,7 @@ def test_the_release_files_and_one_checksum_file(tmp_path):
     names = sorted(p.name for p in out.iterdir())
     assert names == sorted([
         "SHA256SUMS", "ssh_runner-official.fap", "ssh_runner-unleashed.fap",
-        f"flipper-ssh-runner-esp32-v{VER}.zip", f"flipper-ssh-runner-esp32-rev0.1-v{VER}.zip",
+        f"flipper-ssh-runner-esp32-waveshare-v{VER}.zip", f"flipper-ssh-runner-esp32-rev0.1-v{VER}.zip",
         f"sshrunner_{VER}_linux_amd64.tar.gz", f"sshrunner_{VER}_windows_arm64.zip", f"sshrunner_{VER}_amd64.deb",
     ])
     sums = dict(line.split("  ")[::-1] for line in (out / "SHA256SUMS").read_text().splitlines())
@@ -157,7 +157,7 @@ def test_notes_keep_the_approved_layout():
 
 def test_notes_install_a_factory_image_first_and_the_app_on_updates():
     notes = ra.notes(VER)
-    assert f"`flipper-ssh-runner-esp32-v{VER}.zip`" in notes
+    assert f"`flipper-ssh-runner-esp32-waveshare-v{VER}.zip`" in notes
     assert f"`flipper-ssh-runner-esp32-rev0.1-v{VER}.zip`" in notes
     assert "On a first install, erase the flash, then write the factory image (`-factory.bin`) at `0x0`." in notes
     assert "On an update, write only the app image (`-app.bin`) at `0x20000`, without erasing" in notes

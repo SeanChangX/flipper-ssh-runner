@@ -27,8 +27,8 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   all.
 - The board's USB console log leaves out the WiFi driver's start-up details; its warnings and
   errors still show.
-- The release files have a new layout: a firmware zip per board (Waveshare ESP32-S3-ETH and
-  SSH Runner rev 0.1), each with a factory image for a first install (at `0x0`) and an app
+- The release files have a new layout: a firmware zip per board, named for it (`waveshare` for
+  the Waveshare ESP32-S3-ETH, `rev0.1` for SSH Runner rev 0.1), each with a factory image for a first install (at `0x0`) and an app
   image for updates (at `0x20000`) instead of three parts; the licenses are in a `licenses/`
   folder in the firmware zips and the PC tool's archives.
 

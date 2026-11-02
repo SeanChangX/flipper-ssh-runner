@@ -43,21 +43,21 @@ the `sshrunner` PC tool; GitHub Actions builds and publishes the files from the 
 | File | What |
 |---|---|
 | `ssh_runner-official.fap`, `ssh_runner-unleashed.fap` | the Flipper app: the official build runs on both firmwares, the Unleashed build is optional |
-| `flipper-ssh-runner-esp32-vX.Y.Z.zip` | the firmware for the Waveshare ESP32-S3-ETH |
+| `flipper-ssh-runner-esp32-waveshare-vX.Y.Z.zip` | the firmware for the Waveshare ESP32-S3-ETH |
 | `flipper-ssh-runner-esp32-rev0.1-vX.Y.Z.zip` | the firmware for the SSH Runner rev 0.1 board |
 | `sshrunner_X.Y.Z_<os>_<arch>.tar.gz` / `.zip` | the PC tool for Linux, macOS (`.tar.gz`) and Windows (`.zip`), amd64 and arm64 |
 | `sshrunner_X.Y.Z_<arch>.deb` / `.rpm` | the PC tool as Linux packages (`/usr/bin/sshrunner`) |
 | `SHA256SUMS` | the one checksum file, over every file above |
 
-Each firmware zip holds:
+Each firmware zip holds (`<board>` is `waveshare` or `rev0.1`):
 
 ```text
-README.txt                                       which image to flash when, with the commands
-flipper-ssh-runner[-rev0.1]-vX.Y.Z-factory.bin   bootloader, partition table and app from 0x0
-flipper-ssh-runner[-rev0.1]-vX.Y.Z-app.bin       the app alone, for 0x20000
-licenses/                                        LICENSE, COPYING.libssh, BSD.libssh,
-                                                 LICENSE.{esp-idf,lwip,freertos,mbedtls},
-                                                 THIRD_PARTY_NOTICES.txt
+README.txt                                     which image to flash when, with the commands
+flipper-ssh-runner-<board>-vX.Y.Z-factory.bin  bootloader, partition table and app from 0x0
+flipper-ssh-runner-<board>-vX.Y.Z-app.bin      the app alone, for 0x20000
+licenses/                                      LICENSE, COPYING.libssh, BSD.libssh,
+                                               LICENSE.{esp-idf,lwip,freertos,mbedtls},
+                                               THIRD_PARTY_NOTICES.txt
 ```
 
 Each PC tool archive holds `sshrunner` (`sshrunner.exe`), `LICENSE`, a short `README.md` and
