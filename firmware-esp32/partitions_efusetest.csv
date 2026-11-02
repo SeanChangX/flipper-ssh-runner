@@ -1,0 +1,10 @@
+# The virtual-eFuse test build's partition table (sdkconfig.efusetest): partitions.csv, the
+# same offsets, plus the test build's own plaintext keystore and its emulated eFuses
+# (CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH). tools/tests/test_flash.py checks the two tables agree.
+# Name,    Type, SubType,  Offset,   Size,     Flags
+nvs,       data, nvs,      0x9000,   0x10000,
+phy_init,  data, phy,      0x19000,  0x1000,
+factory,   app,  factory,  0x20000,  0x300000,
+fes_sec,   data, nvs,      0x320000, 0x10000,
+nvs_test,  data, nvs,      0x330000, 0x10000,
+efuse_em,  data, efuse,    0x340000, 0x2000,

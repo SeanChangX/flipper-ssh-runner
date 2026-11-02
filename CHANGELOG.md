@@ -32,6 +32,10 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   with a factory image for a first install (at `0x0`) and an app image for updates (at
   `0x20000`) instead of three parts; the licenses are in a `licenses/` folder in the firmware
   zips and the PC tool's archives.
+- The ESP32's partition table keeps only the partitions the firmware uses (settings, PHY
+  calibration, the app and the protected keystore, at the same offsets as before); three unused
+  ones are gone. A board flashed before v0.3.0 needs one first install (erase, then the factory
+  image) to get the new table; an app-only update keeps the old table, which still works.
 
 ### Removed
 
