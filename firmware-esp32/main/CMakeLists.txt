@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c" "app.c" "console.c"
+    SRCS "main.c" "app.c" "console.c" "textwidth.c"
     INCLUDE_DIRS "."
     REQUIRES proto keystore net ssh link console esp_timer bootinfo statusled esp_app_format
 )

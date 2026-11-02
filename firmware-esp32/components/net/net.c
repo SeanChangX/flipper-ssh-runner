@@ -146,7 +146,8 @@ esp_err_t net_set_cfg(const ProtoNetCfg* cfg) {
     esp_netif_t* n = cfg->iface == ProtoIfaceLan ? s.eth_netif : s.sta_netif;
     esp_err_t err = apply_ip(n, cfg);
     if(err == ESP_OK) err = keystore_netcfg_set(cfg);
-    ESP_LOGI(
+    ESP_LOG_LEVEL_LOCAL(
+        err == ESP_OK ? ESP_LOG_DEBUG : ESP_LOG_WARN,
         TAG,
         "%s: %s config %s",
         cfg->iface == ProtoIfaceLan ? "LAN" : "WiFi",

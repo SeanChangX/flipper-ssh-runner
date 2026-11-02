@@ -42,6 +42,7 @@
 #include "net.h"
 #include "sdkconfig.h"
 #include "statusled.h"
+#include "textwidth.h"
 
 #if CONFIG_FES_CONSOLE
 
@@ -50,6 +51,7 @@ static SemaphoreHandle_t done_sem;
 static ProtoExecDone last_done;
 static uint8_t* script_buf;
 static SemaphoreHandle_t key_sem;
+static SemaphoreHandle_t result_sem; /* `wifi scan` and `ping`: the result is in */
 static char* kept_key; /* `keyblob end keep`: console copy for `cycles` */
 static size_t kept_len;
 static size_t hex_off; /* next offset of `keyblob hex` */
@@ -263,19 +265,38 @@ static int cmd_heap(int argc, char** argv) {
 
 static void scan_cb(const ProtoScanResult* r, void* ctx) {
     (void)ctx;
-    for(uint8_t i = 0; i < r->count; i++)
+    for(uint8_t i = 0; i < r->count; i++) {
+        size_t w = text_width(r->entries[i].ssid); /* CJK SSIDs line up too */
         printf(
-            "  %-32s %4d dBm ch %2u %s\n",
+            "  %s%*s %4d dBm ch %2u %s\n",
             r->entries[i].ssid,
+            (int)(w < 32 ? 32 - w : 0),
+            "",
             r->entries[i].rssi,
             r->entries[i].channel,
             r->entries[i].auth ? "secured" : "open");
-    if(r->last) printf("%u networks\n", r->total);
+    }
+    if(r->last) {
+        printf("%u networks\n", r->total);
+        xSemaphoreGive(result_sem);
+    }
 }
 
 static int cmd_wifi(int argc, char** argv) {
-    if(argc >= 2 && !strcmp(argv[1], "scan"))
-        return net_wifi_scan(scan_cb, NULL) == ESP_OK ? 0 : 1;
+    if(argc >= 2 && !strcmp(argv[1], "scan")) {
+        xSemaphoreTake(result_sem, 0);
+        esp_err_t err = net_wifi_scan(scan_cb, NULL);
+        if(err != ESP_OK) {
+            printf("wifi scan: %s\n", esp_err_to_name(err));
+            return 1;
+        }
+        /* the result arrives from the WiFi task: print it before the next prompt */
+        if(xSemaphoreTake(result_sem, pdMS_TO_TICKS(15000)) != pdTRUE) {
+            printf("wifi scan: no result within 15 s\n");
+            return 1;
+        }
+        return 0;
+    }
     if(argc >= 3 && !strcmp(argv[1], "join"))
         return net_wifi_join(argv[2], argc > 3 ? argv[3] : "") == ESP_OK ? 0 : 1;
     if(argc >= 2 && !strcmp(argv[1], "rejoin")) {
@@ -307,7 +328,24 @@ static int cmd_netcfg(int argc, char** argv) {
     } else {
         goto usage;
     }
-    return net_set_cfg(&c) == ESP_OK ? 0 : 1;
+    esp_err_t err = net_set_cfg(&c);
+    const char* iface = c.iface == ProtoIfaceWifi ? "WiFi" : "LAN";
+    if(err != ESP_OK) {
+        printf("netcfg: %s: %s\n", iface, esp_err_to_name(err));
+        return 1;
+    }
+    if(c.mode == ProtoIpDhcp) {
+        printf("%s: DHCP, saved\n", iface);
+    } else {
+        char a[16], m[16], g[16];
+        printf(
+            "%s: static %s mask %s gw %s, saved\n",
+            iface,
+            ip_str(c.ip, a),
+            ip_str(c.mask, m),
+            ip_str(c.gw, g));
+    }
+    return 0;
 usage:
     printf("usage: netcfg lan|wifi dhcp | netcfg lan|wifi static <ip> <mask> <gw> [dns]\n");
     return 1;
@@ -315,14 +353,21 @@ usage:
 
 static void ping_cb(const ProtoPingResp* r, void* ctx) {
     (void)ctx;
-    printf(
-        "ping: %u/%u replies, min/avg/max %u/%u/%u ms via %s\n",
-        r->received,
-        r->sent,
-        r->min_ms,
-        r->avg_ms,
-        r->max_ms,
-        r->iface == ProtoIfaceLan ? "LAN" : "WiFi");
+    const char* via = r->iface == ProtoIfaceLan ? "LAN" : "WiFi";
+    unsigned loss = r->sent ? 100u * (unsigned)(r->sent - r->received) / r->sent : 100u;
+    if(r->received)
+        printf(
+            "ping: %u/%u replies (%u%% loss), min/avg/max %u/%u/%u ms via %s\n",
+            r->received,
+            r->sent,
+            loss,
+            r->min_ms,
+            r->avg_ms,
+            r->max_ms,
+            via);
+    else
+        printf("ping: %u/%u replies (100%% loss) via %s\n", r->received, r->sent, via);
+    xSemaphoreGive(result_sem);
 }
 
 static int cmd_ping(int argc, char** argv) {
@@ -342,9 +387,18 @@ static int cmd_ping(int argc, char** argv) {
         r.count = (uint8_t)n;
     }
     if(argc > 3) r.transport = parse_transport(argv[3]);
+    xSemaphoreTake(result_sem, 0);
     esp_err_t err = net_ping(&r, ping_cb, NULL);
-    if(err != ESP_OK) printf("ping: %s\n", esp_err_to_name(err));
-    return err == ESP_OK ? 0 : 1;
+    if(err != ESP_OK) {
+        printf("ping: %s\n", esp_err_to_name(err));
+        return 1;
+    }
+    /* about a second per echo, plus the name lookup: print the result before the prompt */
+    if(xSemaphoreTake(result_sem, pdMS_TO_TICKS(2000u * r.count + 10000u)) != pdTRUE) {
+        printf("ping: no result in time\n");
+        return 1;
+    }
+    return 0;
 }
 
 static int cmd_ssh(int argc, char** argv) {
@@ -404,6 +458,10 @@ static int cmd_trust(int argc, char** argv) {
         printf("usage: trust cancel|once|add|replace [label]\n");
         return 1;
     }
+    if(ssh_client_state() != ProtoSshHostkeyWait) {
+        printf("trust: no host-key prompt pending\n");
+        return 1;
+    }
     d.decision = !strcmp(argv[1], "once")    ? ProtoDecisionOnce :
                  !strcmp(argv[1], "add")     ? ProtoDecisionAdd :
                  !strcmp(argv[1], "replace") ? ProtoDecisionReplace :
@@ -413,17 +471,25 @@ static int cmd_trust(int argc, char** argv) {
 }
 
 static int cmd_pw(int argc, char** argv) {
-    if(argc < 2) return 1;
+    if(argc < 2) {
+        printf("usage: pw <password>\n");
+        return 1;
+    }
     esp_err_t err = ssh_client_password(argv[1], (last_conn.flags & PROTO_CONN_REMEMBER) != 0);
     memset(argv[1], 0, strlen(argv[1]));
+    if(err == ESP_ERR_INVALID_STATE) printf("pw: no password prompt pending\n");
     return err == ESP_OK ? 0 : 1;
 }
 
 static int cmd_pp(int argc, char** argv) {
-    if(argc < 2) return 1;
+    if(argc < 2) {
+        printf("usage: pp <passphrase> [-n]\n");
+        return 1;
+    }
     bool remember = !(argc > 2 && !strcmp(argv[2], "-n"));
     esp_err_t err = ssh_client_passphrase(argv[1], remember);
     memset(argv[1], 0, strlen(argv[1]));
+    if(err == ESP_ERR_INVALID_STATE) printf("pp: no passphrase prompt pending\n");
     return err == ESP_OK ? 0 : 1;
 }
 
@@ -730,7 +796,10 @@ static int cmd_cycles(int argc, char** argv) {
 }
 
 static int cmd_hostkeys(int argc, char** argv) {
-    if(argc < 2) return 1;
+    if(argc < 2) {
+        printf("usage: hostkeys <profile>   (a profile is host:port or a host's alias)\n");
+        return 1;
+    }
     KnownHosts kh;
     keystore_kh_load(argv[1], &kh);
     for(uint8_t i = 0; i < kh.count; i++)
@@ -759,9 +828,9 @@ static int cmd_link(int argc, char** argv) {
     LinkDebug d;
     link_get_debug(&d);
     printf(
-        "link: peer %s, baud %lu, rx %lu B, %lu frames; tx %lu frames, %lu retransmits, %lu timeouts, "
+        "link: peer: %s, baud %lu, rx %lu B, %lu frames; tx %lu frames, %lu retransmits, %lu timeouts, "
         "%lu duplicates\n",
-        d.peer ? "yes" : "no",
+        d.peer ? "Flipper" : "none",
         (unsigned long)d.baud,
         (unsigned long)d.rx_bytes,
         (unsigned long)d.rx_frames,
@@ -787,6 +856,10 @@ static int cmd_stats(int argc, char** argv) {
     (void)argv;
     SshStats st;
     ssh_client_stats(&st);
+    if(!st.handshake_ms) {
+        printf("no handshake yet since boot\n");
+        return 0;
+    }
     printf(
         "last handshake %lu ms, internal heap low-water %lu\n",
         (unsigned long)st.handshake_ms,
@@ -802,6 +875,7 @@ static void reg(const char* name, const char* help, esp_console_cmd_func_t fn) {
 void console_start(void) {
     done_sem = xSemaphoreCreateBinary();
     key_sem = xSemaphoreCreateBinary();
+    result_sem = xSemaphoreCreateBinary();
     esp_console_repl_t* repl = NULL;
     esp_console_repl_config_t cfg = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     cfg.prompt = "fes> ";
