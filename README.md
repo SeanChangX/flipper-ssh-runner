@@ -40,11 +40,12 @@ keyboard and screen. Pick a host, authenticate, run a command or a script, and r
 ## Screenshots
 
 <p align="center">
-  <img src="docs/media/demo.gif" alt="Animation of a first connection: Home, Quick Connect, typing user@host, connecting, checking the host key, the password, the Run menu, typing uname -a, and its output with the exit code">
+  <img src="docs/media/demo.gif" alt="Animation of a session on the real board: Home with the board's address, the saved host homelab and its page, a key login straight to the run menu, the output of fetch, usage with CPU, memory and disk bars, and services, then the SD card script health.sh with its checks, 5/5 passed and exit code 0">
 </p>
 
 Every screen below is from the app's [demo mode](flipper-app/README.md#without-the-board)
-(simulated board, example data), at 4× the Flipper's 128×64 screen.
+(simulated board, example data), at 4× the Flipper's 128×64 screen. Settings > Developer
+appears only with the Flipper's Settings > System > Debug on.
 
 <table>
 <tr>
@@ -111,8 +112,8 @@ the Flipper is coming in a later release.
 </tr>
 </table>
 
-<p align="center">SSH Runner rev 0.1, the custom add-on PCB: in production; design files will be
-published with v0.3.0 after bring-up.</p>
+<p align="center">SSH Runner rev 0.1, the custom add-on PCB: bring-up in progress; design files
+will be published with v0.3.0.</p>
 
 ## Installation
 

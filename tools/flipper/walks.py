@@ -13,7 +13,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from . import kbd, screen
+from . import kbd, screen, ui
 from .rpc import FlipperRpc
 
 FAP = "/ext/apps/GPIO/ssh_runner.fap"
@@ -44,6 +44,17 @@ class AppGone(WalkFailed):
     so the whole run stops: no more keys at all, straight to restore."""
 
 
+class SecurityReached(AppGone):
+    """A walk that did not ask for it is on Settings > Security, one key (Right) away from
+    Protect, a permanent eFuse burn on a real board. Nothing more is sent: straight to
+    restore, like AppGone."""
+
+
+class WalkSkipped(Exception):
+    """The walk cannot run on this Flipper as it is set up (for example Developer needs the
+    Flipper's Settings > System > Debug, which the tools never turn on). Not a failure."""
+
+
 PUBLIC_SHOTS = Path(__file__).resolve().parents[2] / "docs" / "screenshots"
 
 
@@ -68,6 +79,7 @@ class Walker:
         self.locks = 0
         self.last_frame: bytes | None = None
         self.in_app = False  # SSH Runner was launched by this walk and must still run
+        self.allow_security = False  # only w_security (the demo build, no board) goes there
         # FES_WALK_TRACE=<dir>: a frame after every key press, to see where a walk went off
         import os
 
@@ -89,6 +101,37 @@ class Walker:
         if self.in_app and not self.r.app_locked():
             self.in_app = False
             raise AppGone("SSH Runner is no longer running; no more keys are sent")
+
+    def _guard_security(self) -> None:
+        """Before every navigation key: never on the Security screen by accident."""
+        if self.in_app and not self.allow_security and ui.on_security(self.r.screenshot()):
+            raise SecurityReached("on Settings > Security, which this walk did not ask for; "
+                                  "no more keys are sent")
+
+    def select(self, label: str, limit: int = 24) -> None:
+        """Move the menu's cursor onto `label` (found by its pixels, ui.REFS), up or down as
+        it is drawn, without pressing OK. WalkSkipped if the menu does not have it: every
+        item has passed under the cursor (it moved, then came back to where it started).
+        A screen that does not move at all (an app still starting ignores keys) is not
+        taken for a menu without the item."""
+        start = prev = None
+        moved = False
+        for _ in range(limit):
+            frame = self.settle()
+            hit = ui.find(frame, label)
+            if hit and hit.selected:
+                return
+            if start is None:
+                start = frame
+            else:
+                moved = moved or frame != prev
+                if moved and frame == start:
+                    raise WalkSkipped(f"no {label!r} in this menu")
+            prev = frame
+            sel_y = _selected_row(frame)
+            self.press("up" if hit and sel_y is not None and hit.y < sel_y else "down")
+        raise WalkFailed(f"{label!r} not reached in {limit} presses" +
+                         ("" if moved else ": the screen did not move with Up/Down"))
 
     def unlock_if_locked(self) -> None:
         """Auto-lock (plain lock, no PIN) may engage between walks: unlock the standard
@@ -176,6 +219,7 @@ class Walker:
     def press(self, key: str, n: int = 1, long: bool = False, delay: float = 0.4) -> None:
         for _ in range(n):
             self._guard()
+            self._guard_security()
             self.r.input(key, long=long)
             time.sleep(delay)
             self._trace(("long-" if long else "") + key)
@@ -185,6 +229,7 @@ class Walker:
         fresh=False continues from where the previous type() left the cursor."""
         start = kbd.START if fresh else self.kbd_state
         presses, self.kbd_state = kbd.plan_ex(text, clear_first=clear_first, confirm=confirm, start=start)
+        self._guard_security()
         for key, lng in presses:
             self._guard()
             self.r.input(key, long=lng)
@@ -228,13 +273,44 @@ class Walker:
                 self.in_app = False
                 self.log(f"  app exited after {i} Back presses")
                 return
-            if i == 8:
+            if i == 8 and not ui.on_security(self.r.screenshot()):
                 # an editor's "Discard Changes?" dialog answers Back with Cancel: Discard
+                # (never Right on Security, even in w_security: it leads to Protect)
                 self.log("  still running after 8 Back presses: Right (Discard) once")
                 self.press("right", delay=0.5)
             self.press("back", delay=0.35)
         if self.r.app_locked():
             raise WalkFailed(f"app still running after {max_backs} Back presses")
+
+
+def _selected_row(frame: bytes) -> int | None:
+    """The top row of the menu's dark cursor bar (a row lit across the list), or None."""
+    px = screen.pixels(frame)
+    for y in range(64):
+        if sum(px[y][4:110]) > 100:
+            return y
+    return None
+
+
+def _open_settings(w: Walker) -> None:
+    """Home > Settings, from Home (wherever its cursor is)."""
+    w.select("Settings")
+    w.press("ok")
+    w.wait(0.4)
+
+
+def _settings_item(w: Walker, item: str) -> None:
+    """On Settings: open `item`. Settings reopens on the last item chosen, and lists
+    Developer only with the Flipper's Debug flag, so the item is found by its label."""
+    try:
+        w.select(item)
+    except WalkSkipped:
+        if item == "Developer":
+            raise WalkSkipped("Settings has no Developer: it needs the Flipper's Settings > System > "
+                              "Debug on, which the tools never change. Turn it on by hand to run this walk.")
+        raise
+    w.press("ok")
+    w.wait(0.5)
 
 
 # ---------------------------------------------------------------------------
@@ -247,15 +323,19 @@ def w_tour(w: Walker) -> None:
     w.wait(0.5)
     # No screenshot of the real backend here: with the board wired it shows a live
     # address. The board states are captured on the mock by the "board" walk.
-    w.press("down", 5)  # Settings
-    w.press("ok")
+    _open_settings(w)
+    # Developer first: without the Debug flag the walk skips before its first screenshot
+    try:
+        w.select("Developer")
+    except WalkSkipped:
+        raise WalkSkipped("Settings has no Developer: it needs the Flipper's Settings > System > Debug "
+                          "on, which the tools never change. Turn it on by hand to run this walk.")
+    w.select("About")
     w.shot("02-settings")
-    w.press("ok")  # About
-    w.wait(0.3)
+    _settings_item(w, "About")
     w.shot("03-about")
     w.press("back")
-    w.press("down")  # Developer
-    w.press("ok")
+    _settings_item(w, "Developer")
     w.shot("04-developer")
     w.press("right")  # Mock backend: On
     w.wait(0.8)
@@ -623,10 +703,8 @@ def w_link(w: Walker) -> None:
     w.launch()
     w.wait(4.0)  # HELLO + baud negotiation
     w.shot("m3-01-home-board")
-    w.press("down", 5)  # Settings
-    w.press("ok")
-    w.press("ok")  # About
-    w.wait(0.5)
+    _open_settings(w)
+    _settings_item(w, "About")
     w.shot("m3-02-about")
     w.press("down", 8)
     w.wait(0.3)
@@ -680,11 +758,9 @@ def w_dialogs(w: Walker) -> None:
     w.press("back")  # Back = Cancel: nothing deleted
     w.press("back")
     w.press("back")
-    w.press("down", 4)  # Settings
-    w.press("ok")
-    w.press("down")  # Developer
-    w.press("ok")
-    w.press("down", 3)  # Link test (mock: a perfect link)
+    _open_settings(w)
+    _settings_item(w, "Developer")
+    w.select("Link Test 1 MiB")  # mock: a perfect link
     w.press("ok")
     w.wait(1.5)
     w.shot("64-report-linktest")
@@ -698,7 +774,8 @@ def w_board(w: Walker) -> None:
     w.wait(0.6)
     linked = w.r.screenshot()[:128]
     _open_developer(w)
-    w.press("down", 4)  # Mock board
+    w.select("Link Test 1 MiB")
+    w.press("down")  # Mock board, the row after it
     w.press("ok")  # the chooser, on the current state (Linked)
     w.press("down")  # No network
     w.shot("65-developer-mock-board")
@@ -708,9 +785,10 @@ def w_board(w: Walker) -> None:
     w.wait(0.5)
     w.shot("66-home-no-network")
     no_net = w.r.screenshot()[:128]
-    w.press("ok")  # Settings (Developer remembered)
-    w.press("ok")  # Developer; the list starts at the top again
-    w.press("down", 4)
+    _open_settings(w)
+    _settings_item(w, "Developer")  # the list starts at the top again
+    w.select("Link Test 1 MiB")
+    w.press("down")  # Mock board
     w.press("ok")  # chooser on No network
     w.press("down")  # No board
     w.press("ok")
@@ -719,16 +797,14 @@ def w_board(w: Walker) -> None:
     w.wait(0.5)
     w.shot("67-home-board-gone")
     gone = w.r.screenshot()[:128]
-    w.press("ok")  # Settings
-    w.press("up")  # About
-    w.press("ok")
-    w.wait(0.3)
+    _open_settings(w)
+    _settings_item(w, "About")
     w.press("down", 3)
     w.shot("68-about-board-gone")
     w.press("back")
-    w.press("down")  # Developer
-    w.press("ok")
-    w.press("down", 4)
+    _settings_item(w, "Developer")
+    w.select("Link Test 1 MiB")
+    w.press("down")  # Mock board
     w.press("ok")  # chooser on No board
     w.press("up", 2)  # Linked
     w.press("ok")
@@ -748,17 +824,21 @@ def w_security(w: Walker) -> None:
     """Settings > Security on the mock (same steps as w_security in test_render.c): the
     status, the warning, the typed word (OK does nothing until it is "confirm"), progress
     through the ESP32's restart, the result. The demo build burns nothing: no board."""
+    if w.real_backend:
+        raise WalkFailed("w_security runs only on the demo build (mock, no board): never on a real board")
     marker = "/ext/apps_data/ssh_runner/.demo_sec_fail"  # the demo build's mock fails the first try
     if not w.r.stat("/ext/apps_data/ssh_runner"):
         w.r.mkdir("/ext/apps_data/ssh_runner")
     w.r.write(marker, b"")
     w.launch()
     w.wait(0.6)
-    w.press("down", 5)  # Settings
-    w.press("ok")
-    w.press("down", 2)  # Security (after Developer: the walks run with Debug on)
-    w.press("ok")
-    w.wait(0.5)
+    _open_settings(w)
+    w.allow_security = True  # this walk, and only this one, opens Security on purpose
+    _settings_item(w, "Security")
+    px = screen.pixels(w.settle())
+    if not all(px[63][x] for x in range(112, 128)):  # no Protect button: no (mock) board linked
+        raise WalkSkipped("Security shows no board: the mock board is linked by the mock backend, "
+                          "which the tour turns on in Developer (needs the Flipper's Debug flag)")
     w.shot("s01-security-plain")
     w.press("right")  # Protect
     w.shot("s02-protect-confirm")
@@ -836,9 +916,8 @@ def w_examples(w: Walker) -> None:
         raise WalkFailed("the examples were not copied on the first start")
     if b"Examples: seeded" not in w.r.read(SETTINGS):
         raise WalkFailed("the first start was not recorded in settings.conf")
-    w.press("down", 5)  # Settings
-    w.press("ok")
-    w.press("down", 3)  # Restore Examples (after Developer and Security: Debug is on)
+    _open_settings(w)
+    w.select("Restore Examples")
     w.shot("x01-settings-restore-examples")
     w.press("ok")
     w.wait(0.5)
@@ -891,10 +970,8 @@ def w_examples(w: Walker) -> None:
 
     w.launch()  # ... until Settings > Restore Examples
     w.wait(0.6)
-    w.press("down", 5)
-    w.press("ok")
-    w.press("down", 3)
-    w.press("ok")
+    _open_settings(w)
+    _settings_item(w, "Restore Examples")
     w.wait(0.5)
     w.shot("x02-examples-restored")
     if not w.r.stat(f"{SCRIPTS}/sysinfo.sh"):
@@ -940,11 +1017,8 @@ WALKS = {
 
 
 def _open_developer(w: Walker) -> None:
-    w.press("down", 5)  # Settings
-    w.press("ok")
-    w.press("down")  # Developer
-    w.press("ok")
-    w.wait(0.5)
+    _open_settings(w)
+    _settings_item(w, "Developer")
 
 
 def w_linktest(w: Walker) -> None:
@@ -952,7 +1026,7 @@ def w_linktest(w: Walker) -> None:
     w.launch()
     w.wait(4.0)
     _open_developer(w)
-    w.press("down", 3)  # Link test 1 MiB
+    w.select("Link Test 1 MiB")
     w.shot("m3-10-developer")
     w.press("ok")
     w.wait(8.0)  # progress is reported every 128 frames: catch it mid-run, not at 0%
@@ -1180,7 +1254,7 @@ def w_cmdlen(w: Walker) -> None:
     w.type(env["SSH_TARGET_PASSWORD"])
     w.wait(3.0)
     w.shot("c01-run-menu")
-    w.press("down", 2)  # Type command (after the two default global commands)
+    w.select("Type Command")  # after the host's and the global commands, however many
     w.press("ok")
     w.wait_keyboard()
     cmd = "echo " + "a" * 109 + "|wc -c>/tmp/n"  # 127 characters: 109 a's and a newline = 110
@@ -1252,7 +1326,7 @@ def w_m4(w: Walker) -> None:
     w.type(pw)
     w.wait(3.0)
     w.shot("m4-05-run-menu")
-    w.press("down", 2)  # Type command
+    w.select("Type Command")
     w.press("ok")
     w.type("uname -a")
     w.wait(3.0)
@@ -1315,7 +1389,7 @@ def w_m4(w: Walker) -> None:
     w.wait(3.0)
     w.shot("m4-11-output-uptime")
     w.press("back")
-    w.press("down", 3)  # $ uptime, $ df -h, Type command, Scripts
+    w.select("Scripts")
     w.press("ok")
     w.wait(0.5)
     w.press("ok")  # hello.sh
@@ -1326,7 +1400,7 @@ def w_m4(w: Walker) -> None:
     w.shot("m4-13-output-script")
     w.press("back")
     # Back stops a running command: the remote process must be gone, the session kept.
-    w.press("up")  # Type command
+    w.select("Type Command")
     w.press("ok")
     w.type("sleep 30")
     w.wait(2.5)
@@ -1427,7 +1501,7 @@ def w_hwkeys(w: Walker) -> None:
     w.press("right")  # Trust
     w.wait(3.0)
     w.shot("hk04-run-menu-default-key")
-    w.press("down", 2)  # Type command
+    w.select("Type Command")
     w.press("ok")
     w.type("whoami")
     w.wait(3.0)
@@ -1549,10 +1623,8 @@ def w_heap(w: Walker) -> None:
 
 
 def _open_settings_about(w: Walker) -> None:
-    w.press("down", 5)  # Settings
-    w.press("ok")
-    w.press("ok")  # About
-    w.wait(0.5)
+    _open_settings(w)
+    _settings_item(w, "About")
 
 
 def w_m5(w: Walker) -> None:
@@ -1774,6 +1846,13 @@ def run_all(
             fn(w)
             results[name] = {"ok": True, "shots": w.taken, "seconds": round(time.monotonic() - t0, 1),
                              "auto_locks": w.locks}
+        except WalkSkipped as e:
+            log(f"walk {name} SKIPPED: {e}")
+            try:
+                w.exit_app()
+            except Exception as e2:  # noqa: BLE001
+                log(f"  leaving the app after the skip failed: {e2}")
+            results[name] = {"ok": True, "skipped": str(e), "shots": w.taken, "auto_locks": w.locks}
         except AppGone as e:
             log(f"walk {name} STOPPED: {e}; no further walks, going to restore")
             try:
