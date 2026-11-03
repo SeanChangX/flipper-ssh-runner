@@ -85,8 +85,8 @@ to install. It needs a desktop Chrome or Edge (it uses Web Serial).
    | First install | `0` | `...-factory.bin` |
    | Update | `20000` | `...-app.bin` |
 
-   The page starts with the rows `1000`, `8000`, `E000` and `10000`: set the first row's
-   offset and file, and leave the others without a file (a row without a file is skipped).
+   The page shows one row, at offset `0`, with **Multiple files** off; set its offset and
+   select the file. (With **Multiple files** on, any row left without a file is skipped.)
 4. Click **Program** and confirm.
 5. When it is done, restart the board: unplug it and plug it in again, or press its RESET
    button (the add-on board).
