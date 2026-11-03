@@ -12,6 +12,8 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-03
+
 ### Added
 
 - The SSH Runner add-on board's design, rev 0.1 ([`hardware/`](hardware/README.md)): KiCad 10
@@ -21,8 +23,9 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   session comes up, on for a second when a link is up, a double flash while an SSH session is
   open, and fast flashes on an error ([Hardware and Wiring](docs/HARDWARE.md#status-led)). The
   console's `led off` turns it off.
-- The firmware's board is a Kconfig choice: the Waveshare ESP32-S3-ETH (the default) or the
-  custom SSH Runner add-on board (rev 0.1 and later). It sets the status LED's type and pin.
+- Firmware for the custom SSH Runner add-on board (rev 0.1 and later), next to the Waveshare
+  ESP32-S3-ETH; built from source, the board is a Kconfig choice that sets the status LED's type
+  and pin.
 
 ### Changed
 
@@ -41,6 +44,14 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
   calibration, the app and the protected keystore, at the same offsets as before); three unused
   ones are gone. A board flashed before v0.3.0 needs one first install (erase, then the factory
   image) to get the new table; an app-only update keeps the old table, which still works.
+
+### Fixed
+
+- Clearer replies on the board's USB console: `pw`, `pp` and `trust` say when no prompt is
+  pending, and `hostkeys` and other commands print their usage instead of a bare error code.
+- `wifi scan` and `ping` print their results before the next prompt, and `wifi scan` lines up
+  SSIDs in Chinese, Japanese or Korean.
+- `stats` and `ping` no longer show 0 ms when nothing was measured.
 
 ### Removed
 
@@ -101,6 +112,7 @@ coming in a later release.
 - One app build for the official firmware `1.5.1` and Unleashed `unlshd-094`, plus an optional
   Unleashed-only build.
 
-[Unreleased]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/SeanChangX/flipper-ssh-runner/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SeanChangX/flipper-ssh-runner/releases/tag/v0.2.0

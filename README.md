@@ -44,8 +44,7 @@ keyboard and screen. Pick a host, authenticate, run a command or a script, and r
 </p>
 
 Every screen below is from the app's [demo mode](flipper-app/README.md#without-the-board)
-(simulated board, example data), at 4× the Flipper's 128×64 screen. Settings > Developer
-appears only with the Flipper's Settings > System > Debug on.
+(simulated board, example data), at 4× the Flipper's 128×64 screen.
 
 <table>
 <tr>
@@ -65,7 +64,7 @@ appears only with the Flipper's Settings > System > Debug on.
 </tr>
 <tr>
 <td><img src="docs/screenshots/k08-key-card.png" alt="Key card for id_ed25519: Ed25519, default key, encrypted, SHA256 fingerprint"><br><sub><b>Key details:</b> type, passphrase, fingerprint</sub></td>
-<td><img src="docs/screenshots/x01-settings-restore-examples.png" alt="Settings menu with Developer, Security and Restore Examples"><br><sub><b>Settings:</b> restore the built-in examples</sub></td>
+<td><img src="docs/screenshots/x01-settings-restore-examples.png" alt="Settings menu with Developer, Security and Restore Examples"><br><sub><b>Settings:</b> restore the built-in examples; Developer appears only with the Flipper's Settings > System > Debug on</sub></td>
 <td><img src="docs/screenshots/s02-protect-confirm.png" alt="Protect Secrets? warning: cannot be undone, burns a key into the ESP32, updates still work"><br><sub><b>Security:</b> optional secret protection</sub></td>
 </tr>
 </table>
@@ -80,11 +79,11 @@ appears only with the Flipper's Settings > System > Debug on.
 | Part | Notes |
 |---|---|
 | Flipper Zero | Unleashed `unlshd-094` or official `1.5.1` firmware, with an SD card |
-| [Waveshare ESP32-S3-ETH](https://www.waveshare.com/wiki/ESP32-S3-ETH) | ESP32-S3R8, 16 MB flash, W5500 Ethernet with RJ45, USB-C |
-| 3–4 jumper wires | see the wiring below |
+| SSH Runner add-on board | ESP32-S3-WROOM-1 (16 MB flash, 8 MB PSRAM), W5500 Ethernet with RJ45, USB-C; plugs straight onto the Flipper's GPIO header, no wiring |
+| or [Waveshare ESP32-S3-ETH](https://www.waveshare.com/wiki/ESP32-S3-ETH) | ESP32-S3R8, 16 MB flash, W5500 Ethernet with RJ45, USB-C; with 3–4 jumper wires, see the wiring below |
 | Ethernet cable or a 2.4 GHz WiFi network | the ESP32-S3 has no 5 GHz radio |
 
-### Wiring
+### Wiring (Waveshare ESP32-S3-ETH)
 
 | Flipper Zero GPIO | ESP32-S3-ETH | Use |
 |---|---|---|
@@ -102,8 +101,12 @@ appears only with the Flipper's Settings > System > Debug on.
 > supplies together. Remove the 3V3 wire before connecting USB-C (for example to flash the
 > firmware). Leave "5V on GPIO" off on the Flipper.
 
-Pin details: [Hardware and Wiring](docs/HARDWARE.md). A custom add-on PCB that plugs straight into
-the Flipper is coming in a later release.
+Pin details: [Hardware and Wiring](docs/HARDWARE.md).
+
+The SSH Runner add-on board (rev 0.1) is built and tested. Its design files are in
+[`hardware/`](hardware/README.md) (CC BY-NC-SA 4.0: source-available, non-commercial), to order
+or build yourself; on rev 0.1 the status LED is a hand-fitted part (erratum E1). Its USB-C may
+stay plugged in while it sits on the Flipper.
 
 <table>
 <tr>
@@ -160,7 +163,8 @@ Archives for Linux, macOS and Windows (`sshrunner_<version>_<os>_<arch>`), plus 
 
 ## Usage
 
-1. Wire the board to the Flipper and power it (USB-C, or the 3V3 wire).
+1. Put the add-on board on the Flipper, or wire the Waveshare board to it and power it (USB-C,
+   or the 3V3 wire).
 2. Open **SSH Runner**. The header shows the board's address once it has a network.
 3. **Network > LAN:** plug in an Ethernet cable, or **Network > Join WiFi** to pick a network.
 4. **Quick Connect:** type `user@host`, check the host key, enter the password.

@@ -19,7 +19,7 @@ App(
     # and the hardware walks (hwkeys, m4, m5); 4.5 KB leaves ~30 % headroom
     stack_size=4 * 1024 + 512,
     fap_category="GPIO",
-    fap_version="0.2",
+    fap_version="0.3",
     fap_icon="icons/ssh_runner_10px.png",
     fap_icon_assets="images",
     # the built-in examples (files/examples/), copied to the data folder once, on first run

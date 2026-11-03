@@ -109,7 +109,7 @@ is reset or unplugged), so:
 
 - **F** sends an empty `ECHO` whenever it has sent nothing for 0.7 s while the link is up.
   When any request times out after its retries (§3), F treats the board as gone:
-  "No ESP32 board", back to 115200, and a new `HELLO` right away. A lost keepalive is
+  "No board", back to 115200, and a new `HELLO` right away. A lost keepalive is
   not reported as a failed user action.
 - **E** treats the Flipper as gone after 2 s without a valid frame: it stops sending
   events, resets its duplicate detection, closes an SSH session that the app left open, and

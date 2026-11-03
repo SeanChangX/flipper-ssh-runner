@@ -2,19 +2,32 @@
 
 [← Documentation index](README.md)
 
-From a Flipper Zero and a Waveshare ESP32-S3-ETH board to the first command, in about ten
-minutes. The files come from the project's latest release.
+From a Flipper Zero and an ESP32-S3 board to the first command, in about ten minutes. Two
+boards run SSH Runner: the SSH Runner add-on board, which plugs straight onto the Flipper, and
+the Waveshare ESP32-S3-ETH, wired to it with jumper wires. The files come from the project's
+latest release.
 
 ## Contents
 
-- [1. Wiring](#1-wiring)
+- [1. Connect the Board](#1-connect-the-board)
 - [2. Flash the ESP32](#2-flash-the-esp32)
 - [3. Install the App](#3-install-the-app)
 - [4. First Run](#4-first-run)
 - [5. Messages](#5-messages)
 - [6. Wiping the Board](#6-wiping-the-board)
 
-## 1. Wiring
+## 1. Connect the Board
+
+### SSH Runner Add-On Board
+
+No wiring: the board plugs straight onto the Flipper's GPIO header and runs from the Flipper's
+battery. Its USB-C is for flashing, debugging or bench power, and may stay plugged in while the
+board sits on the Flipper: a power mux runs the board from USB then and keeps the two supplies
+apart. Leave "5V on GPIO" off on the Flipper. The board is rev 0.1 and later; its design files
+are in [`hardware/`](../hardware/README.md). On rev 0.1 the status LED (D201) is fitted by hand
+(erratum E1).
+
+### Waveshare ESP32-S3-ETH
 
 | Flipper Zero GPIO | ESP32-S3-ETH | Use |
 |---|---|---|
@@ -54,7 +67,7 @@ flash one:
 Never write the factory image on an update: it erases the board's saved WiFi network,
 remembered passwords and trusted host keys like an erase does.
 
-Remove the 3V3 wire if it is fitted, then connect the board's USB-C to the computer. It
+Connect the board's USB-C to the computer (on the Waveshare, remove the 3V3 wire first). It
 appears as a USB serial port (USB ID `303a:1001`); the Flipper, if also connected, is
 `0483:5740`.
 
@@ -75,10 +88,12 @@ to install. It needs a desktop Chrome or Edge (it uses Web Serial).
    The page starts with the rows `1000`, `8000`, `E000` and `10000`: set the first row's
    offset and file, and leave the others without a file (a row without a file is skipped).
 4. Click **Program** and confirm.
-5. When it is done, unplug the board and plug it in again.
+5. When it is done, restart the board: unplug it and plug it in again, or press its RESET
+   button (the add-on board).
 
 If the board does not connect, put it in download mode: unplug it, hold its BOOT button while
-you plug it in again, then click **Connect** again.
+you plug it in again, then click **Connect** again. On the add-on board, hold BOOT and press
+RESET.
 
 > [!WARNING]
 > Do not click **Erase** when you update: it also erases the board's saved WiFi network,
@@ -129,8 +144,8 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 
 ## 4. First Run
 
-1. The top line shows the board: `No ESP32 board` (check the wires and power), `Offline`
-   (board found, no network yet) or its IP address.
+1. The top line shows the board: `No board` (check the board's seat or wires, and power),
+   `No network` (board found, no network yet) or its IP address.
 2. **Network > LAN:** plug the Ethernet cable into the board. The first row goes `No cable` >
    `Waiting` > the DHCP address. For WiFi use **Network > Join WiFi**; the ESP32-S3 is
    **2.4 GHz only** and cannot see 5 GHz networks.
@@ -146,8 +161,8 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 
 | Message | Meaning and what to do |
 |---|---|
-| No ESP32 board | no answer on the UART: check TX, RX, GND and that the board is powered |
-| Offline | board found, no Ethernet link and no WiFi |
+| No board | no answer on the UART: check that the add-on board sits fully on the header, or the TX, RX and GND wires, and that the board is powered |
+| No network | board found, no Ethernet link and no WiFi |
 | LAN cable not connected / No cable | plug the cable in; the RJ45 LEDs should light |
 | Waiting | link up but no DHCP lease yet: check the network, or set a static address (Network > LAN > Mode) |
 | Connection timed out | host unreachable from the board's network |
