@@ -146,6 +146,21 @@ def test_notes_are_one_line_per_paragraph_and_item():
     assert f"/blob/v{VER}/docs/" in notes
 
 
+def test_notes_link_only_to_absolute_urls():
+    assert not re.search(r"\]\((?!https://)", ra.notes(VER))
+
+
+def test_relative_links_are_pinned_to_the_tag_whatever_their_folder():
+    md = ("[design](hardware/README.md) [LED](docs/HARDWARE.md#status-led) [top](#install) "
+          "[site](https://example.com/x) [mail](mailto:a@example.com)")
+    out = ra.pin_links(md, "9.9.9")
+    blob = f"{ra.REPO}/blob/v9.9.9/"
+    assert f"[design]({blob}hardware/README.md)" in out
+    assert f"[LED]({blob}docs/HARDWARE.md#status-led)" in out
+    assert "[top](#install)" in out and "[site](https://example.com/x)" in out
+    assert "[mail](mailto:a@example.com)" in out
+
+
 def test_notes_keep_the_approved_layout():
     notes = ra.notes(VER)
     # the release shows its own title and date

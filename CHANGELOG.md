@@ -12,6 +12,11 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+### Fixed
+
+- The release notes link every repository file to the tagged version; links to folders other
+  than `docs/` and `cli/` pointed nowhere.
+
 ## [0.3.0] - 2026-11-03
 
 ### Added

@@ -158,8 +158,14 @@ def notes(ver: str) -> str:
     # no heading or date (the release shows its own); the change kinds at the level of "## Install"
     sec = re.sub(r"^## \[[0-9.]+\].*", "", sec)
     sec = re.sub(r"^### ", "## ", sec, flags=re.M)
-    sec = re.sub(r"\]\(((?:docs|cli|flipper-app|firmware-esp32)/[^)]+)\)", lambda m: f"]({doc}{m.group(1)})", sec)
-    return unwrap(sec).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
+    return unwrap(pin_links(sec, ver)).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
+
+
+def pin_links(md: str, ver: str) -> str:
+    """Every relative link target (no scheme, not an anchor) as the file at the tag: the release
+    page has no repository folder to resolve `docs/...` or `hardware/...` against."""
+    return re.sub(r"\]\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
+                  lambda m: f"]({REPO}/blob/v{ver}/{m.group(1)})", md)
 
 
 def plain(md: str, ver: str) -> str:
