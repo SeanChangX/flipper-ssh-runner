@@ -1,7 +1,7 @@
 # Builds a release's files and publishes the release when a version tag (vX.Y.Z) is pushed.
-# Run by hand (workflow_dispatch), or on a pull request that changes how releases are built,
-# it is a dry run: the same files as an artifact, no release. The files are collected by
-# tools/release_assets.py (docs/RELEASING.md).
+# Run by hand (workflow_dispatch), or on a pull request that changes how releases are built or
+# the CHANGELOG (the release notes come from it), it is a dry run: the same files as an
+# artifact, no release. The files are collected by tools/release_assets.py (docs/RELEASING.md).
 name: release
 
 on:
@@ -9,6 +9,7 @@ on:
     tags: ["v*"]
   pull_request:
     paths:
+      - CHANGELOG.md
       - .github/workflows/release.yml
       - tools/release_assets.py
       - cli/.goreleaser.yaml

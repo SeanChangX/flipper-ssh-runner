@@ -158,14 +158,48 @@ def notes(ver: str) -> str:
     # no heading or date (the release shows its own); the change kinds at the level of "## Install"
     sec = re.sub(r"^## \[[0-9.]+\].*", "", sec)
     sec = re.sub(r"^### ", "## ", sec, flags=re.M)
-    return unwrap(pin_links(sec, ver)).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
+    out = unwrap(pin_links(sec, ver)).strip() + "\n\n" + INSTALL.format(ver=ver, doc=doc)
+    check_links(out)
+    return out
+
+
+# Link targets in Markdown: inline links and images `](target)`, reference definitions
+# `[x]: target`, and the HTML attributes href="target" / src="target".
+LINK_TARGETS = (
+    re.compile(r"\]\(([^)\s]+)\)"),
+    re.compile(r"^\s{0,3}\[[^\]]+\]:\s*(\S+)", re.M),
+    re.compile(r"""\b(?:href|src)=["']([^"']+)["']"""),
+)
+SCHEME = re.compile(r"[a-zA-Z][a-zA-Z0-9+.-]*:")
 
 
 def pin_links(md: str, ver: str) -> str:
-    """Every relative link target (no scheme, not an anchor) as the file at the tag: the release
-    page has no repository folder to resolve `docs/...` or `hardware/...` against."""
-    return re.sub(r"\]\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
-                  lambda m: f"]({REPO}/blob/v{ver}/{m.group(1)})", md)
+    """Every relative link target as the file at the tag: the release page has no repository
+    folder to resolve `docs/...` or `hardware/...` against. Paths are relative to the
+    repository's root (CHANGELOG.md sits there); a missing file stops the release."""
+
+    def pin(m: re.Match[str]) -> str:
+        target = m.group(1)
+        if SCHEME.match(target) or target.startswith("#"):
+            return m.group(0)
+        path = target.removeprefix("./")
+        if not (ROOT / path.split("#", 1)[0]).exists():
+            die(f"release notes link to {target}, which is not in the repository")
+        start, end = m.span(1)
+        whole = m.group(0)
+        return whole[: start - m.start()] + f"{REPO}/blob/v{ver}/{path}" + whole[end - m.start():]
+
+    for pattern in LINK_TARGETS:
+        md = pattern.sub(pin, md)
+    return md
+
+
+def check_links(md: str) -> None:
+    """Fail closed: a release page whose links do not all open somewhere absolute is not made."""
+    for pattern in LINK_TARGETS:
+        for target in pattern.findall(md):
+            if not target.startswith(("https://", "mailto:")):
+                die(f"release notes keep a link that does not resolve on the release page: {target}")
 
 
 def plain(md: str, ver: str) -> str:
