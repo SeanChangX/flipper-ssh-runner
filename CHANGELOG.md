@@ -17,7 +17,7 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 - The release notes link every repository file to the tagged version; v0.3.0's link to
   `hardware/` pointed nowhere (corrected on the release page). A link that would not open on the
   release page now stops the release build.
-- The Quick Start's browser steps match the current web flasher: one file and its offset, with
+- The Quick Start's browser steps describe the web flasher's current page: one row, with
   "Multiple files" off.
 
 ## [0.3.0] - 2026-11-03

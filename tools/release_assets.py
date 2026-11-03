@@ -86,8 +86,8 @@ Update (the board already runs SSH Runner): do not erase, write only
 This keeps the board's saved WiFi and trusted host keys.
 
 In the browser (desktop Chrome or Edge): https://esptool.spacehuhn.com/ or
-https://espressif.github.io/esptool-js/ : Connect, Erase (first install only), one file at
-its offset as above ("Multiple files" off), Program.
+https://espressif.github.io/esptool-js/ : Connect, Erase (first install only), one row with
+the offset and the file (a row without a file is skipped), Program.
 With esptool (pip install esptool), from this folder; <port> is e.g. COM5, /dev/ttyACM0 or
 /dev/cu.usbmodem*:
     first install:  esptool.py --chip esp32s3 -p <port> erase_flash

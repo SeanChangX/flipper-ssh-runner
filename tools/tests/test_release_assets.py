@@ -89,8 +89,6 @@ def test_a_firmware_zip_per_board(tmp_path, board, zip_name, image):
     assert f"{image}-factory.bin  at 0x0" in readme and f"{image}-app.bin  at 0x20000" in readme
     assert f"write_flash 0x0 {image}-factory.bin" in readme and f"write_flash 0x20000 {image}-app.bin" in readme
     assert "erases the board's saved WiFi" in readme and "first install only" in readme
-    # the web flasher as it is today: one file at its offset, no preset rows
-    assert '"Multiple files" off' in readme and not re.search(r"\brows?\b", readme)
     assert "flash_args" not in readme and "development image" not in readme
     assert board.usb in readme and ("3V3 wire" in readme) == (board.tag == "waveshare")
     # links absolute and pinned to the tag

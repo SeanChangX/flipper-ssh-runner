@@ -78,11 +78,15 @@ to install. It needs a desktop Chrome or Edge (it uses Web Serial).
 
 1. Open the page and click **Connect**; choose the board's port.
 2. **First install only:** click **Erase** and confirm. Skip this step when you update.
-3. Leave **Multiple files** off: the page shows one file with its offset (the field after
-   `0x`, in hex).
-   - **First install:** keep the offset at `0` and **Select** the factory image
-     (`...-factory.bin`).
-   - **Update:** set the offset to `20000` and **Select** the app image (`...-app.bin`).
+3. Each row is an offset (the field after `0x`, in hex) and a file (**Select**). Use one row:
+
+   | When | Offset (`0x`) | File |
+   |---|---|---|
+   | First install | `0` | `...-factory.bin` |
+   | Update | `20000` | `...-app.bin` |
+
+   The page shows one row, at offset `0`, with **Multiple files** off; set its offset and
+   select the file. (With **Multiple files** on, any row left without a file is skipped.)
 4. Click **Program** and confirm.
 5. When it is done, restart the board: unplug it and plug it in again, or press its RESET
    button (the add-on board).
@@ -96,8 +100,8 @@ RESET.
 > remembered passwords and trusted host keys.
 
 Espressif's [esptool-js](https://espressif.github.io/esptool-js/) works the same way:
-**Connect**, **Erase Flash** on a first install only, one file with its flash address (`0x0`
-for the factory image, `0x20000` for the app image), **Program**.
+**Connect**, **Erase Flash** on a first install only, one row with the offset and the file,
+**Program**.
 
 ### With esptool (Command Line)
 
