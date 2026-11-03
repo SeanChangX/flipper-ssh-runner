@@ -144,8 +144,8 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 
 ## 4. First Run
 
-1. The top line shows the board: `No ESP32 board` (check the board's seat or wires, and
-   power), `Offline` (board found, no network yet) or its IP address.
+1. The top line shows the board: `No board` (check the board's seat or wires, and power),
+   `No network` (board found, no network yet) or its IP address.
 2. **Network > LAN:** plug the Ethernet cable into the board. The first row goes `No cable` >
    `Waiting` > the DHCP address. For WiFi use **Network > Join WiFi**; the ESP32-S3 is
    **2.4 GHz only** and cannot see 5 GHz networks.
@@ -161,8 +161,8 @@ firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
 
 | Message | Meaning and what to do |
 |---|---|
-| No ESP32 board | no answer on the UART: check that the add-on board sits fully on the header, or the TX, RX and GND wires, and that the board is powered |
-| Offline | board found, no Ethernet link and no WiFi |
+| No board | no answer on the UART: check that the add-on board sits fully on the header, or the TX, RX and GND wires, and that the board is powered |
+| No network | board found, no Ethernet link and no WiFi |
 | LAN cable not connected / No cable | plug the cable in; the RJ45 LEDs should light |
 | Waiting | link up but no DHCP lease yet: check the network, or set a static address (Network > LAN > Mode) |
 | Connection timed out | host unreachable from the board's network |

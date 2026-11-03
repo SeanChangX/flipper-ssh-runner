@@ -1142,7 +1142,7 @@ def w_replug(w: Walker) -> None:
     linked = w.r.screenshot()[:128]  # top page: the status header
 
     # A: the ESP32 ignores the UART for 6 s, exactly what the Flipper sees when the wires
-    # come off; it must show "No ESP32 board" and reconnect by itself afterwards.
+    # come off; it must show "No board" and reconnect by itself afterwards.
     s = _esp32_console(port)
     w.log("  " + _esp32_cmd(s, "link mute 6").strip().splitlines()[-2:][0])
     gone, back = _watch_header(w, linked, 15.0, "mute:")
