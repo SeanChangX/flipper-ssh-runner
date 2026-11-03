@@ -94,6 +94,9 @@ def test_a_firmware_zip_per_board(tmp_path, board, zip_name, image):
     # links absolute and pinned to the tag
     assert f"{ra.REPO}/blob/v{VER}/docs/QUICKSTART.md" in readme
     assert "](" not in readme
+    # every link to a document is a full URL (plain text: no Markdown links to resolve)
+    docs = re.findall(r"\S*\.md\S*", readme)
+    assert docs and all(d.startswith(f"{ra.REPO}/blob/v{VER}/") for d in docs), docs
     assert len(readme.splitlines()) <= 25
 
 
@@ -144,6 +147,50 @@ def test_notes_are_one_line_per_paragraph_and_item():
     notes = ra.notes(VER)
     assert "## Install" in notes
     assert f"/blob/v{VER}/docs/" in notes
+
+
+BLOB = f"{ra.REPO}/blob/v9.9.9/"
+
+
+@pytest.mark.parametrize("md, pinned", [
+    ("[Quick Start](docs/QUICKSTART.md)", f"[Quick Start]({BLOB}docs/QUICKSTART.md)"),
+    ("[LED](docs/HARDWARE.md#status-led)", f"[LED]({BLOB}docs/HARDWARE.md#status-led)"),
+    ("[PC Tool](cli/README.md)", f"[PC Tool]({BLOB}cli/README.md)"),
+    ("[design](hardware/README.md)", f"[design]({BLOB}hardware/README.md)"),
+    ("[notices](THIRD_PARTY.md)", f"[notices]({BLOB}THIRD_PARTY.md)"),
+    ("[changes](./CHANGELOG.md)", f"[changes]({BLOB}CHANGELOG.md)"),
+    ("![render](docs/media/pcb-rev0.1-top.png)", f"![render]({BLOB}docs/media/pcb-rev0.1-top.png)"),
+    ("[ref]: THIRD_PARTY.md", f"[ref]: {BLOB}THIRD_PARTY.md"),
+    ('<img src="docs/media/demo.gif">', f'<img src="{BLOB}docs/media/demo.gif">'),
+    ("[site](https://example.com/x)", "[site](https://example.com/x)"),
+    ("[mail](mailto:a@example.com)", "[mail](mailto:a@example.com)"),
+])
+def test_relative_links_are_pinned_to_the_tag_whatever_their_folder(md, pinned):
+    out = ra.pin_links(md, "9.9.9")
+    assert out == pinned
+    ra.check_links(out)
+
+
+def test_a_link_to_a_missing_file_stops_the_release():
+    with pytest.raises(SystemExit, match="not in the repository"):
+        ra.pin_links("[gone](hardware/NOPE.md)", "9.9.9")
+
+
+@pytest.mark.parametrize("md", ["[top](#install)", "[x](http://example.com)", "[ref]: #top",
+                                '<a href="docs/x.md">x</a>'])
+def test_a_link_that_does_not_resolve_on_the_release_page_is_refused(md):
+    with pytest.raises(SystemExit, match="does not resolve"):
+        ra.check_links(md)
+
+
+def test_every_changelog_section_renders_with_only_absolute_links():
+    # a new entry linking a folder or file the tooling has not seen fails here, on its PR
+    heads = re.findall(r"^## \[([^\]]+)\]", (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"), re.M)
+    assert {"0.2.0", "0.2.1", "0.3.0"} <= set(heads)
+    for ver in heads:
+        ra.check_links(ra.pin_links(ra.section(ver), "9.9.9"))
+    for ver in (h for h in heads if h != "Unreleased"):
+        ra.notes(ver)  # pins, then refuses a page with a link that does not resolve
 
 
 def test_notes_keep_the_approved_layout():

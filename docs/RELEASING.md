@@ -99,9 +99,15 @@ The attestation covers every file listed in `SHA256SUMS`.
 
 The workflow builds the same files without publishing them when it runs by hand (Actions >
 release > Run workflow, with an optional version) or on a pull request that changes
-`.github/workflows/release.yml`, `tools/release_assets.py`, `cli/.goreleaser.yaml` or
-`cli/scripts/archive_files.sh`. The files and the notes are kept as the run's artifact
-`release-X.Y.Z`.
+`CHANGELOG.md`, `.github/workflows/release.yml`, `tools/release_assets.py`,
+`cli/.goreleaser.yaml` or `cli/scripts/archive_files.sh`. The files and the notes are kept as
+the run's artifact `release-X.Y.Z`.
+
+Every relative link in the notes becomes the file at the tag (`blob/vX.Y.Z/...`). A link to a
+file that is not in the repository, or one that would not open on the release page (an
+anchor-only link, plain `http://`), stops the build before anything is published;
+`tools/tests/test_release_assets.py` renders every CHANGELOG section the same way, so such a
+link also fails the checks of the pull request that adds it.
 
 ## Flipper Apps Catalog
 

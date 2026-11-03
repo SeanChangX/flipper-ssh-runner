@@ -12,6 +12,12 @@ and the PC tool's, and the Flipper app carries its major.minor (`0.2`).
 
 ## [Unreleased]
 
+### Fixed
+
+- The release notes link every repository file to the tagged version; v0.3.0's link to
+  `hardware/` pointed nowhere (corrected on the release page). A link that would not open on the
+  release page now stops the release build.
+
 ## [0.3.0] - 2026-11-03
 
 ### Added
