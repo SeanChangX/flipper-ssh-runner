@@ -160,7 +160,7 @@ BLOB = f"{ra.REPO}/blob/v9.9.9/"
     ("[notices](THIRD_PARTY.md)", f"[notices]({BLOB}THIRD_PARTY.md)"),
     ("[changes](./CHANGELOG.md)", f"[changes]({BLOB}CHANGELOG.md)"),
     ("![render](docs/media/pcb-rev0.1-top.png)", f"![render]({BLOB}docs/media/pcb-rev0.1-top.png)"),
-    ("[ref]: hardware/LICENSE", f"[ref]: {BLOB}hardware/LICENSE"),
+    ("[ref]: THIRD_PARTY.md", f"[ref]: {BLOB}THIRD_PARTY.md"),
     ('<img src="docs/media/demo.gif">', f'<img src="{BLOB}docs/media/demo.gif">'),
     ("[site](https://example.com/x)", "[site](https://example.com/x)"),
     ("[mail](mailto:a@example.com)", "[mail](mailto:a@example.com)"),
