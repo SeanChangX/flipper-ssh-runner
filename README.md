@@ -124,15 +124,21 @@ Download the files from the [latest release](https://github.com/SeanChangX/flipp
 
 ### Flipper App
 
-Download the official build, `ssh_runner-official.fap`: it runs on the official and on the
-Unleashed firmware. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card reader, and open it
-from **Apps > GPIO > SSH Runner**. `ssh_runner-unleashed.fap` is optional, for Unleashed only
-(it scrolls long values in lists instead of showing their end).
+The easiest way is the [Flipper Apps Catalog](https://lab.flipper.net/apps/ssh_runner): connect
+the Flipper over USB, open that page in desktop Chrome or Edge and click **Install**, or find
+SSH Runner under Apps in the Flipper mobile app. Then open it from
+**Apps > GPIO > SSH Runner**.
 
-If the Flipper reports an API mismatch or an outdated app after a firmware update, download
-the latest release. A Flipper app runs when its API major version equals the firmware's and
-its minor version is not newer. The official build targets API 88.2, which the official
-firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
+To install it by hand, download the official build, `ssh_runner-official.fap`: it runs on the
+official and on the Unleashed firmware. Copy it to `SD Card/apps/GPIO/` with qFlipper or a card
+reader. `ssh_runner-unleashed.fap` is optional, for Unleashed only (it scrolls long values in
+lists instead of showing their end).
+
+If the Flipper reports an API mismatch or an outdated app after a firmware update, update the
+app from the catalog or download the latest release. A Flipper app runs when its API major
+version equals the firmware's and its minor version is not newer. The official build targets
+API 88.2, which the official firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both
+accept.
 
 ### ESP32 Firmware
 

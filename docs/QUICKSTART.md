@@ -132,15 +132,21 @@ Building the firmware yourself instead: see [Build Outputs](ARCHITECTURE.md#buil
 ## 3. Install the App
 
 1. Close any other program that uses the Flipper's USB port.
-2. Copy `ssh_runner-official.fap` to `SD Card/apps/GPIO/` with qFlipper's file manager or a
-   card reader. It runs on the official and on the Unleashed firmware;
-   `ssh_runner-unleashed.fap` is an optional build for Unleashed only.
+2. Install the app in one of two ways:
+   - **From the catalog (easiest):** connect the Flipper over USB, open
+     [SSH Runner in the Flipper Apps Catalog](https://lab.flipper.net/apps/ssh_runner) in
+     desktop Chrome or Edge and click **Install**, or find SSH Runner under Apps in the Flipper
+     mobile app.
+   - **By hand:** copy `ssh_runner-official.fap` to `SD Card/apps/GPIO/` with qFlipper's file
+     manager or a card reader. It runs on the official and on the Unleashed firmware;
+     `ssh_runner-unleashed.fap` is an optional build for Unleashed only.
 3. On the Flipper: **Apps > GPIO > SSH Runner**.
 
-If the Flipper reports an API mismatch or an outdated app after a firmware update, download
-the latest release. A Flipper app runs when its API major version equals the firmware's and
-its minor version is not newer. The official build targets API 88.2, which the official
-firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both accept.
+If the Flipper reports an API mismatch or an outdated app after a firmware update, update the
+app from the catalog or download the latest release. A Flipper app runs when its API major
+version equals the firmware's and its minor version is not newer. The official build targets
+API 88.2, which the official firmware `1.5.1` (88.2) and Unleashed `unlshd-094` (88.19) both
+accept.
 
 ## 4. First Run
 
